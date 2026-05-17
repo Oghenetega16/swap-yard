@@ -59,7 +59,6 @@ export default function MakeReport() {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Issue Type */}
           <div className="space-y-4">
             <p className="text-sm font-semibold text-slate-700">Select the type of issue you are reporting:</p>
             <div className="flex gap-8">
@@ -73,8 +72,6 @@ export default function MakeReport() {
               </label>
             </div>
           </div>
-
-          {/* Issue Detail */}
           <div className="space-y-2">
             <label className="text-sm font-semibold text-slate-700">Describe the issue in detail:</label>
             <textarea 
@@ -86,9 +83,8 @@ export default function MakeReport() {
             />
           </div>
 
-          {/* File Upload Simulation */}
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Upload supporting documents or images (max 3 files, 5MB each)</label>
+            <label className="text-sm font-semibold text-slate-700">Upload supporting documents or images (max 2 files, 5MB each)</label>
             <div className="border-2 border-dashed border-slate-200 rounded-xl py-12 flex flex-col items-center justify-center bg-white hover:bg-slate-50 transition-colors cursor-pointer relative">
               <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*,.pdf" />
               <div className="bg-slate-100 p-3 rounded-full mb-3 text-slate-600">
@@ -98,7 +94,6 @@ export default function MakeReport() {
             </div>
           </div>
 
-          {/* User Info Grid */}
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-semibold text-slate-700">Full Name</label>
@@ -118,7 +113,6 @@ export default function MakeReport() {
             </div>
           </div>
 
-          {/* Submission Status */}
           <div className="pt-4 space-y-4">
             {status && (
               <div className={`flex items-center gap-3 p-4 rounded-lg border ${status.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
