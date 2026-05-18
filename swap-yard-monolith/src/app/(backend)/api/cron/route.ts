@@ -1,0 +1,10 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function GET(request: NextRequest) {
+  console.log("👋 Cron job executed successfully for: Your Name");
+
+  return NextResponse.json({ 
+    success: true, 
+    message: "Name logged successfully" 
+  });
+}
