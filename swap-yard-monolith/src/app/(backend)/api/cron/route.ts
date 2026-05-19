@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       },
     });
 
-    console.log(`Deleted ${result.count} stale notifications.`);
+    console.log(`Deleted ${result.count} stale notifications older than 48 hours to optimize database performance.`);
     
     return NextResponse.json({ 
       success: true, 
