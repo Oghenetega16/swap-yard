@@ -190,7 +190,7 @@ export default function MakeReport() {
 
             <button
               disabled={loading}
-              className="w-full bg-[#F0441D] text-white py-4 rounded-lg font-bold text-sm hover:bg-[#d83a17] transition-all active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-[#F0441D] text-white py-4 rounded-lg font-bold text-sm hover:bg-[#d83a17] transition-all active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
             >
               {loading ? (
                 <>
