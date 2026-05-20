@@ -76,7 +76,7 @@ export default function MakeReport() {
         throw new Error();
       }
     } catch (err) {
-      setStatus({ type: 'error', msg: 'Failed to submit report. Please check your connection and try again.' });
+      setStatus({ type: 'error', msg: 'Failed to submit report. Please check your connection and try again, or try logging in if you haven\'t already.' });
     } finally {
       setLoading(false);
     }
