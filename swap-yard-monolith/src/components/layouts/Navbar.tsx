@@ -7,6 +7,7 @@ import Link from "next/link";
 import Logo from "@/components/ui/Logo";
 import { useCart } from "@/app/context/CartContext"; 
 import { useNotification } from "@/app/context/NotificationContext"; 
+import { useRouter } from "next/navigation";
 
 interface NavbarProps {
     onOpenSidebar: () => void;
@@ -36,7 +37,25 @@ export const Navbar = ({ onOpenSidebar }: NavbarProps) => {
     const [authChecked, setAuthChecked] = useState(false);
 
     const { cartItems, cartCount, cartTotal, removeFromCart, updateQuantity } = useCart();
-    const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotification();
+    const { unreadCount } = useNotification();
+    const router = useRouter();
+
+            const {
+                notifications,
+                markAsRead,
+            } = useNotification();
+
+            const unreadNotifications = notifications.filter(
+                (n) => !n.read
+            );
+
+            async function handleNotificationClick(id: string) {
+                await markAsRead(id);
+
+                setIsNotificationOpen(false);
+
+                router.push("/notifications");
+            }
 
     useEffect(() => {
         const checkAuth = async () => {
@@ -262,63 +281,140 @@ export const Navbar = ({ onOpenSidebar }: NavbarProps) => {
                                 )}
                             </button>
 
-                            {/* Dynamic Notification Dropdown Menu */}
                             {isNotificationOpen && (
-                                <div className="absolute right-0 sm:-right-10 md:right-0 top-full mt-4 z-50 animate-in fade-in zoom-in-95 duration-200">
-                                    <div className="w-120 bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col overflow-hidden text-left">
-                                        <div className="p-4 border-b border-gray-100">
-                                            {/* CHANGED: Flex row for Title and X button */}
-                                            <div className="flex justify-between items-center mb-2">
-                                                <h3 className="font-extrabold text-gray-900 text-lg">Notifications</h3>
-                                                <button aria-label="Close option" onClick={() => setIsNotificationOpen(false)} className="text-gray-500 hover:text-gray-900 cursor-pointer p-1">
-                                                    <X className="w-5 h-5" />
-                                                </button>
-                                            </div>
-                                            {/* CHANGED: Mark all as read button right-aligned in its own block below title row */}
-                                            <div className="flex justify-end">
-                                                <button onClick={markAllAsRead} className="text-[10px] font-bold text-[#EB3B18] hover:underline cursor-pointer">
-                                                    Mark all as read
-                                                </button>
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="p-2 flex flex-col max-h-[50vh] overflow-y-auto">
-                                            {notifications.length === 0 ? (
-                                                <p className="text-sm text-gray-500 text-center py-8">No notifications yet.</p>
-                                            ) : (
-                                                notifications.map((notif) => (
-                                                    <div 
-                                                        key={notif.id} 
-                                                        onClick={() => markAsRead(notif.id)}
-                                                        className={`flex gap-3 p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer ${!notif.isRead ? 'border-l-2 border-[#EB3B18] bg-orange-50/20' : ''}`}
-                                                    >
-                                                        <div className={`mt-0.5 p-2 rounded-full shrink-0 h-fit ${!notif.isRead ? 'bg-orange-100' : 'bg-gray-100'}`}>
-                                                            {getNotificationIcon(notif.type)}
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <h4 className="text-[13px] font-bold text-gray-900 mb-0.5">{notif.title}</h4>
-                                                            <p className="text-xs text-gray-600 line-clamp-2">{notif.message}</p>
-                                                            <span className="text-[10px] font-semibold text-gray-400 mt-1">
-                                                                {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                ))
-                                            )}
-                                        </div>
+    <div className="absolute right-0 sm:-right-10 md:right-0 top-full mt-4 z-50 animate-in fade-in zoom-in-95 duration-200">
+        <div className="w-120 bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col overflow-hidden text-left">
 
-                                        <div className="p-3 border-t border-gray-100 bg-gray-50">
-                                            <Link 
-                                                href="/notifications" 
-                                                onClick={() => setIsNotificationOpen(false)} 
-                                                className="block w-full text-center text-xs font-bold text-[#EB3B18] hover:underline cursor-pointer"
-                                            >
-                                                View all notifications
-                                            </Link>
-                                        </div>
-                                    </div>
+            <div className="p-4 border-b border-gray-100">
+                <div className="flex justify-between items-center">
+                    <h3 className="font-extrabold text-gray-900 text-lg">
+                        Notifications
+                    </h3>
+
+                    <button
+                        aria-label="Close option"
+                        onClick={() =>
+                            setIsNotificationOpen(false)
+                        }
+                        className="text-gray-500 hover:text-gray-900 cursor-pointer p-1"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+            </div>
+
+            <div className="p-2 flex flex-col max-h-[50vh] overflow-y-auto">
+
+                {unreadNotifications.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-8">
+                        No unread notifications.
+                    </p>
+                ) : (
+                    unreadNotifications.map((notif) => (
+                        <div
+                            key={notif.id}
+                            className="
+                            flex gap-3 p-3
+                            hover:bg-gray-50
+                            rounded-xl
+                            transition-colors
+                            border-l-2
+                            border-[#EB3B18]
+                            bg-orange-50/20
+                            "
+                        >
+
+                            <div
+                                onClick={() =>
+                                    handleNotificationClick(
+                                        notif.id
+                                    )
+                                }
+                                className="flex gap-3 flex-1 cursor-pointer"
+                            >
+                                <div className="mt-0.5 p-2 rounded-full shrink-0 h-fit bg-orange-100">
+
+                                    {getNotificationIcon(
+                                        notif.type
+                                    )}
+
                                 </div>
-                            )}
+
+                                <div className="flex flex-col">
+
+                                    <h4 className="text-[13px] font-bold text-gray-900 mb-0.5">
+                                        {notif.title}
+                                    </h4>
+
+                                    <p className="text-xs text-gray-600 line-clamp-2">
+                                        {notif.message}
+                                    </p>
+
+                                    <span className="text-[10px] font-semibold text-gray-400 mt-1">
+                                        {new Date(
+                                            notif.createdAt
+                                        ).toLocaleTimeString(
+                                            [],
+                                            {
+                                                hour:
+                                                    "2-digit",
+                                                minute:
+                                                    "2-digit",
+                                            }
+                                        )}
+                                    </span>
+
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+
+                                            markAsRead(
+                                                notif.id
+                                            );
+                                        }}
+                                        className="
+                                        text-[11px]
+                                        text-[#EB3B18]
+                                        underline
+                                        text-left
+                                        mt-1
+                                        w-fit
+                                        "
+                                    >
+                                        Mark as read
+                                    </button>
+
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+
+            <div className="p-3 border-t border-gray-100 bg-gray-50">
+
+                <Link
+                    href="/notifications"
+                    onClick={() =>
+                        setIsNotificationOpen(false)
+                    }
+                    className="
+                    block
+                    w-full
+                    text-center
+                    text-xs
+                    font-bold
+                    text-[#EB3B18]
+                    hover:underline
+                    "
+                >
+                    View all notifications
+                </Link>
+
+            </div>
+        </div>
+    </div>
+)}
                         </div>
                         
                         <Link
