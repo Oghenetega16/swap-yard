@@ -7,6 +7,7 @@ export async function fetchListings(searchParams: URLSearchParams, extraWhere?: 
     q: searchParams.get("q") ?? undefined,
     status: searchParams.get("status") ?? undefined,
     condition: searchParams.get("condition") ?? undefined,
+    category: searchParams.get("category") ?? undefined,
     state: searchParams.get("state") ?? undefined,
     sellerId: searchParams.get("sellerId") ?? undefined,
     categoryId: searchParams.get("categoryId") ?? undefined,
