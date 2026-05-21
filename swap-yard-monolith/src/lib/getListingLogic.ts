@@ -24,15 +24,16 @@ export async function fetchListings(searchParams: URLSearchParams, extraWhere?: 
     throw new Error("INVALID_PARAMS");
   }
 
-  const { q, status, condition, state, sellerId, categoryId, minPrice, maxPrice, offersDelivery, negotiable, page, limit } = validatedQuery.data;
+  const { q, status, condition, state, category, sellerId, categoryId, minPrice, maxPrice, offersDelivery, negotiable, page, limit } = validatedQuery.data;
   const skip = (page - 1) * limit;
 
   const where: Prisma.ListingWhereInput = {
-    ...extraWhere, // Force categoryId here if provided
+    ...extraWhere,
     ...(status ? { status } : {}),
     ...(condition ? { condition } : {}),
     ...(state ? { state } : {}),
     ...(sellerId ? { sellerId } : {}),
+    ...(category ? { category: { name: { equals: category } } } : {}),
     ...(categoryId ? { categoryId } : {}),
     ...(offersDelivery !== undefined ? { offersDelivery } : {}),
     ...(negotiable !== undefined ? { negotiable } : {}),
