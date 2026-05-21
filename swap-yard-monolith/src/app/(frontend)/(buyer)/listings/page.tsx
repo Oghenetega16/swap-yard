@@ -52,7 +52,6 @@ const HorizontalListingCard = ({ item }: { item: any }) => {
   );
 };
 
-// MATCHES SCREENSHOT: Desktop grid under the map
 const AreaListingCardDesktop = ({ item }: { item: any }) => {
   const formattedPrice = new Intl.NumberFormat("en-NG", {
       style: "currency",
@@ -102,12 +101,10 @@ function ListingsContent() {
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
   
-  // Data Fetching State
   const [listings, setListings] = useState<any[]>([]);
   const [meta, setMeta] = useState({ total: 0, page: 1, pages: 1 });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch listings from the backend whenever the URL searchParams change
   useEffect(() => {
     const fetchListings = async () => {
       setIsLoading(true);
@@ -117,9 +114,7 @@ function ListingsContent() {
         const data = await res.json();
         
         if (data.ok) {
-          // MAP BACKEND DATA TO FRONTEND PROPS
           const mappedData = data.items.map((item: any, index: number) => {
-            // Dummy coordinates until the backend supports lat/lng
             const dummyCoords = [
               { lat: 6.5568, lng: 3.3852 }, { lat: 6.5244, lng: 3.3792 },
               { lat: 6.4531, lng: 3.3958 }, { lat: 6.6018, lng: 3.3515 }
@@ -127,12 +122,11 @@ function ListingsContent() {
             
             return {
               id: item.id,
-              title: item.name, // Map backend 'name' to frontend 'title'
+              title: item.name,
               category: item.category?.name || "Uncategorized",
               price: item.price,
               location: item.location || "Location not specified",
               condition: item.condition || "Used",
-              // Use first image if available, else fallback
               imageUrl: item.images && item.images.length > 0 
                 ? item.images[0].url 
                 : "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?q=80&w=500&auto=format&fit=crop",
@@ -157,7 +151,6 @@ function ListingsContent() {
     fetchListings();
   }, [searchParams]);
 
-  // Handle Search Submission
   const handleSearchSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     updateFilters("q", searchInput);
@@ -194,7 +187,7 @@ function ListingsContent() {
   const removeSpecificFilter = (key: string, valueToRemove?: string) => {
     const params = new URLSearchParams(searchParams.toString());
     
-    // If we have a specific value and there are multiple of this key (e.g., checkboxes)
+
     if (valueToRemove) {
       const currentValues = params.getAll(key);
       if (currentValues.length > 1) {
@@ -355,10 +348,6 @@ function ListingsContent() {
             <div className="hidden lg:block mb-6">
               <ActiveFiltersBar activeFilters={activeFiltersPills} onRemove={removeSpecificFilter} onClearAll={clearAllFilters} />
             </div>
-
-            {/* ========================================================= */}
-            {/* CONDITIONAL VIEW RENDERING                                */}
-            {/* ========================================================= */}
             
             {isLoading ? (
               <div className="flex-1 flex flex-col items-center justify-center py-20">
@@ -383,7 +372,6 @@ function ListingsContent() {
                 </div>
                 {meta.pages > 1 && (
                   <div className="mt-8">
-                    {/* Ensure your Pagination component reads from searchParams or pass the meta object to it! */}
                     <Pagination />
                   </div>
                 )}
