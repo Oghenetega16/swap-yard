@@ -20,7 +20,6 @@ export const AppDownloadSection = () => {
 
                 <div className="md:w-1/2 flex justify-center relative">
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-75 h-75 bg-pink-200 rounded-full blur-3xl opacity-50"></div>
-                    {/* Phone Mockup Placeholder */}
                     <div className="relative w-70 h-137.5 bg-white border-8 border-gray-900 rounded-[3rem] shadow-2xl overflow-hidden z-10">
                         <Image 
                             src="https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?w=500" 

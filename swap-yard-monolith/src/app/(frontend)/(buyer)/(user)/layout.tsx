@@ -15,7 +15,7 @@ export default function UserDashboardLayout({
     const SIDEBAR_LINKS = [
         { name: "My Account", icon: <User size={20} />, href: "/profile" },
         { name: "Orders", icon: <Package size={20} />, href: "/orders" },
-        { name: "INotifications", icon: <Mail size={20} />, href: "/notifications" },
+        { name: "Notifications", icon: <Mail size={20} />, href: "/notifications" },
         { name: "Wishlist", icon: <Heart size={20} />, href: "/wishlist" },
     ];
 

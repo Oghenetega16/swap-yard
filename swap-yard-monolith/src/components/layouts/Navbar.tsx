@@ -77,6 +77,15 @@ export const Navbar = ({ onOpenSidebar }: NavbarProps) => {
         checkAuth();
     }, []);
 
+    const handleLogout = async () => {
+        try {
+            await fetch("/api/auth/logout", { method: "POST" });
+            setUser(null);
+            router.push("/auth/login");
+        } catch (error) {
+            console.error("Logout failed:", error);
+        }
+    };
 
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -417,12 +426,12 @@ export const Navbar = ({ onOpenSidebar }: NavbarProps) => {
 )}
                         </div>
                         
-                        <Link
+                        {/* <Link
                             href="/seller/account"
                             className="hidden md:block px-4 py-2 bg-[#EB3B18] text-white rounded-md text-sm font-bold hover:bg-[#bf360c] transition-colors shadow-sm ml-2 cursor-pointer"
                         >
                             Start Selling
-                        </Link>
+                        </Link> */}
 
                         <div className="relative ml-1 md:ml-2" ref={avatarRef}>
                             <button 
@@ -471,7 +480,7 @@ export const Navbar = ({ onOpenSidebar }: NavbarProps) => {
                                         <Heart className="w-4 h-4 text-gray-600" /> Wishlist
                                     </Link>
                                     <button 
-                                        onClick={() => setIsAvatarOpen(false)}
+                                        onClick={handleLogout}
                                         className="w-full text-center px-4 py-3.5 text-[#EB3B18] font-bold hover:bg-gray-50 transition-colors text-sm cursor-pointer"
                                     >
                                         Logout
