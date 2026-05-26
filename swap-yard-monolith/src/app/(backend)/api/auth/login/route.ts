@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import {createToken} from "@/lib/token";
+import {createToken, verifyToken} from "@/lib/token";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { loginSchema } from "../schema";
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
 
     // Optional: enforce email verification later
 
-    const token = await createToken(user.id);
+    const token = await createToken(user.id, user.role);
 
     const response = NextResponse.json(
       { message: "Login successful", user: { id: user.id, email: user.email, role: user.role } },
@@ -44,6 +44,13 @@ export async function POST(req: Request) {
       maxAge: 7 * 24 * 60 * 60
     });
 
+
+      console.log("Role from DB:", user.role);
+
+      console.log(
+        "Token verification:",
+        await verifyToken(token)
+      );
     return response;
   } catch (error) {
     console.error("Error during login:", error);

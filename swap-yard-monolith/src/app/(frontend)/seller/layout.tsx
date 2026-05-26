@@ -1,8 +1,36 @@
 import { ReactNode } from "react";
-import { SellerSidebar } from "@/components/seller/SellerSidebar"; 
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import jwt from "jsonwebtoken"
+import { SellerSidebar } from "@/components/seller/SellerSidebar";
 import { PlusCircle, Bell, MapPin } from "lucide-react";
 
-export default function SellerLayout({ children }: { children: ReactNode }) {
+export default async function SellerLayout({
+    children,
+}: {
+    children: ReactNode;
+}) {
+    const token = (await cookies()).get("token")?.value;
+
+    if (!token) {
+        redirect("/login");
+    }
+
+    try {
+        const decoded = jwt.verify(
+            token,
+            process.env.JWT_SECRET!
+        ) as {
+            role: string;
+        };
+
+        if (decoded.role !== "SELLER") {
+            redirect("/");
+        }
+    } catch {
+        redirect("/login");
+    }
+
     return (
         <div className="min-h-screen bg-[#F9FAFB] flex flex-col pt-20">
             <div className="container mx-auto px-4 md:px-8 lg:px-12 py-8 max-w-7xl flex-1 flex flex-col lg:flex-row gap-8">
@@ -24,8 +52,12 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
                                 <PlusCircle size={24} />
                             </div>
                             <div>
-                                <h4 className="text-gray-900 font-extrabold text-base md:text-lg mb-1">List Products Easily</h4>
-                                <p className="text-gray-600 text-sm leading-relaxed">Create, edit and manage your listings in minutes</p>
+                                <h4 className="text-gray-900 font-extrabold text-base md:text-lg mb-1">
+                                    List Products Easily
+                                </h4>
+                                <p className="text-gray-600 text-sm leading-relaxed">
+                                    Create, edit and manage your listings in minutes
+                                </p>
                             </div>
                         </div>
 
@@ -34,8 +66,12 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
                                 <Bell size={20} />
                             </div>
                             <div>
-                                <h4 className="text-gray-900 font-extrabold text-base md:text-lg mb-1">Order Notifications</h4>
-                                <p className="text-gray-600 text-sm leading-relaxed">Get notified instantly when a customer places an order</p>
+                                <h4 className="text-gray-900 font-extrabold text-base md:text-lg mb-1">
+                                    Order Notifications
+                                </h4>
+                                <p className="text-gray-600 text-sm leading-relaxed">
+                                    Get notified instantly when a customer places an order
+                                </p>
                             </div>
                         </div>
 
@@ -44,10 +80,15 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
                                 <MapPin size={22} />
                             </div>
                             <div>
-                                <h4 className="text-gray-900 font-extrabold text-base md:text-lg mb-1">Reach Local Buyers</h4>
-                                <p className="text-gray-600 text-sm leading-relaxed">Sell to customers near you with location based listings</p>
+                                <h4 className="text-gray-900 font-extrabold text-base md:text-lg mb-1">
+                                    Reach Local Buyers
+                                </h4>
+                                <p className="text-gray-600 text-sm leading-relaxed">
+                                    Sell to customers near you with location based listings
+                                </p>
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>

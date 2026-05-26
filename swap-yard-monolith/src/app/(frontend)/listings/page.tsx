@@ -21,7 +21,7 @@ const HorizontalListingCard = ({ item }: { item: any }) => {
 
   return (
     <div className="flex gap-4 py-4 border-b border-gray-100 last:border-0 relative group">
-      <Link href={`/listings/${item.id}`} className="relative w-28 h-28 shrink-0 bg-gray-100 rounded-2xl overflow-hidden block">
+      <Link href={`/listings/${item.slug}`} className="relative w-28 h-28 shrink-0 bg-gray-100 rounded-2xl overflow-hidden block">
         <Image src={item.imageUrl} alt={item.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
       </Link>
       <div className="flex flex-col flex-1 py-1">
@@ -31,7 +31,7 @@ const HorizontalListingCard = ({ item }: { item: any }) => {
               <Heart className="w-5 h-5" />
             </button>
         </div>
-        <Link href={`/listings/${item.id}`} className="hover:text-[#EB3B18] transition-colors inline-block w-fit">
+        <Link href={`/listings/${item.slug}`} className="hover:text-[#EB3B18] transition-colors inline-block w-fit">
           <h3 className="text-sm font-bold text-gray-900 leading-tight mb-1.5 line-clamp-2 pr-2">
             {item.title}
           </h3>
@@ -43,7 +43,7 @@ const HorizontalListingCard = ({ item }: { item: any }) => {
           <Star className="w-3 h-3 mr-1 text-gray-400" /> {item.rating.toFixed(1)}({item.reviewsCount})
         </div>
         <div className="mt-auto">
-          <Link href={`/listings/${item.id}`} className="inline-block text-[11px] font-bold px-4 py-1.5 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
+          <Link href={`/listings/${item.slug}`} className="inline-block text-[11px] font-bold px-4 py-1.5 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
             View Listing
           </Link>
         </div>
@@ -62,7 +62,7 @@ const AreaListingCardDesktop = ({ item }: { item: any }) => {
   return (
       <div className="flex flex-col gap-3 group">
           <div className="relative aspect-square w-full rounded-[1.25rem] overflow-hidden bg-gray-100">
-              <Link href={`/listings/${item.id}`} className="absolute inset-0 z-0">
+              <Link href={`/listings/${item.slug}`} className="absolute inset-0 z-0">
                 <Image src={item.imageUrl} alt={item.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
               </Link>
               <button aria-label="Save to favorites" className="absolute top-3 right-3 p-1.5 bg-white rounded-full text-gray-400 hover:text-red-500 shadow-sm transition-colors z-10 cursor-pointer">
@@ -70,7 +70,7 @@ const AreaListingCardDesktop = ({ item }: { item: any }) => {
               </button>
           </div>
           <div className="flex flex-col">
-              <Link href={`/listings/${item.id}`} className="hover:text-[#EB3B18] transition-colors z-10 inline-block w-fit">
+              <Link href={`/listings/${item.slug}`} className="hover:text-[#EB3B18] transition-colors z-10 inline-block w-fit">
                 <h3 className="font-bold text-[13px] text-gray-900 leading-tight mb-1 line-clamp-2 min-h-[2.5rem]">
                     {item.title}
                 </h3>
@@ -84,7 +84,7 @@ const AreaListingCardDesktop = ({ item }: { item: any }) => {
               </div>
               <div className="flex items-center justify-between mt-auto border-t border-gray-100 pt-3">
                   <span className="font-extrabold text-[15px] text-[#002147] tracking-tight">{formattedPrice}</span>
-                  <Link href={`/listings/${item.id}`} className="text-[10px] font-bold px-3 py-1.5 border border-gray-200 rounded-md text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer z-10">
+                  <Link href={`/listings/${item.slug}`} className="text-[10px] font-bold px-3 py-1.5 border border-gray-200 rounded-md text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer z-10">
                       View Listing
                   </Link>
               </div>
@@ -122,6 +122,7 @@ function ListingsContent() {
             
             return {
               id: item.id,
+              slug: item.slug,
               title: item.name,
               category: item.category?.name || "Uncategorized",
               price: item.price,
@@ -210,12 +211,12 @@ function ListingsContent() {
     .filter(([key]) => key !== "page" && key !== "limit") // Hide pagination from pills
     .map(([key, value]) => ({
       key: key, 
-      value: value, // Pass the raw value down
+      value: value,
       label: value.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
   }));
 
   const formattedListingsForMap = listings.map(item => ({
-    id: item.id,
+    id: item.slug,
     title: item.title,
     price: new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 0 }).format(item.price),
     location: item.location,

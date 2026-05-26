@@ -160,7 +160,10 @@ export const Navbar = ({ onOpenSidebar }: NavbarProps) => {
                     { isAuth && (
                         <Link href="/orders" className="hover:text-[#EB3B18] transition-colors cursor-pointer">Orders</Link>
                     )}
-                    <Link href="/wishlist" className="hover:text-[#EB3B18] transition-colors cursor-pointer">Wishlist</Link>
+                    { isAuth && (
+                        <Link href="/wishlist" className="hover:text-[#EB3B18] transition-colors cursor-pointer">Wishlist</Link>
+                    )}
+                    
                 </div>
 
                 {!authChecked ? (

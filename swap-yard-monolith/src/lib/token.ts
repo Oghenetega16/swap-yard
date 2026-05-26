@@ -14,14 +14,15 @@ export async function comparePassword(
   return bcrypt.compare(password, hashed)
 }
 
-export async function createToken(userId: string) {
-  return new SignJWT({ userId })
+export async function createToken(userId: string, role: string) {
+  return new SignJWT({ userId, role })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("7d")
-    .sign(secret)
+    .sign(secret);
 }
+
 
 export async function verifyToken(token: string) {
   const { payload } = await jwtVerify(token, secret)
-  return payload as { userId: string }
+  return payload as { userId: string, role: string }
 }
