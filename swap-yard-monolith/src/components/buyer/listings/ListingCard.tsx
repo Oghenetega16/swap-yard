@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 
 export interface ListingCardProps {
   id: string;
+  slug: string;
   title: string;
   category: string;
   price: number;
@@ -22,6 +23,7 @@ export interface ListingCardProps {
 
 export default function ListingCard({
   id,
+  slug,
   title,
   category,
   price,
@@ -49,7 +51,7 @@ export default function ListingCard({
   // Handle Add to Cart logic
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault(); 
-    e.stopPropagation(); // Prevents the link from triggering when clicking the button
+    e.stopPropagation(); 
     
     // Optimistic UI update: Instantly update global cart context
     addToCart({
@@ -111,7 +113,7 @@ export default function ListingCard({
   return (
     <div className="group flex flex-col bg-white rounded-xl overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-gray-100 relative">
       
-      <Link href={`/listings/${id}`} className="relative aspect-square w-full bg-gray-100 overflow-hidden block cursor-pointer z-0">
+      <Link href={`/listings/${slug}`} className="relative aspect-square w-full bg-gray-100 overflow-hidden block cursor-pointer z-0">
         <Image
           src={imageUrl}
           alt={title}
@@ -157,7 +159,7 @@ export default function ListingCard({
         </div>
 
         {/* Title - Wrapped in Link */}
-        <Link href={`/listings/${id}`} className="hover:text-[#EB3B18] transition-colors cursor-pointer w-fit inline-block">
+        <Link href={`/listings/${slug}`} className="hover:text-[#EB3B18] transition-colors cursor-pointer w-fit inline-block">
           <h3 className="font-semibold text-sm sm:text-base text-gray-900 leading-tight mb-1 sm:mb-2 line-clamp-2 min-h-[2.5rem]">
             {title}
           </h3>
@@ -180,7 +182,7 @@ export default function ListingCard({
           <div className="flex items-center gap-1.5 sm:gap-2">
             {/* View Listing Button */}
             <Link
-              href={`/listings/${id}`}
+              href={`/listings/${slug}`}
               className="text-[10px] sm:text-xs font-semibold px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-200 rounded-md sm:rounded-lg hover:border-gray-900 hover:bg-gray-50 transition-colors text-gray-700 whitespace-nowrap cursor-pointer"
             >
               View

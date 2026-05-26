@@ -436,7 +436,7 @@ export default function ProductDetailsPage() {
                 </button>
               </div>
 
-              <div className="flex items-center gap-10 mb-6">
+              {/* <div className="flex items-center gap-10 mb-6">
                 <div>
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
                     RATING
@@ -445,15 +445,10 @@ export default function ProductDetailsPage() {
                     <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" /> 4.8
                   </div>
                 </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                    MEMBER
-                  </p>
-                  <p className="text-sm font-extrabold text-gray-900">2024</p>
-                </div>
-              </div>
+                
+              </div> */}
 
-              <div className="flex gap-3">
+              {/* <div className="flex gap-3">
                 {product.negotiable && (
                   <button className="flex-1 flex items-center justify-center gap-2 py-3 border-2 border-gray-100 text-gray-800 font-extrabold text-xs rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
                     <Tag className="w-4 h-4" /> Make Offer
@@ -462,10 +457,10 @@ export default function ProductDetailsPage() {
                 <button className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#EB3B18] text-white font-extrabold text-xs rounded-xl hover:bg-[#d93616] transition-colors cursor-pointer shadow-sm">
                   <MessageSquare className="w-4 h-4" /> Message
                 </button>
-              </div>
+              </div> */}
             </div>
 
-            <div
+            {/* <div
               className="relative w-full rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-gray-100"
               style={{ height: "140px" }}
             >
@@ -486,7 +481,7 @@ export default function ProductDetailsPage() {
                   Get Directions
                 </button>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
 
