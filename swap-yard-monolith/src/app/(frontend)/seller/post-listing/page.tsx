@@ -39,7 +39,6 @@
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
 
-            {/* LEFT */}
             <div className="space-y-8">
 
             <h2 className="text-xl font-bold text-[#002147] md:hidden">
@@ -47,7 +46,6 @@
             </h2>
 
 
-            {/* IMAGE UPLOAD */}
             <div>
 
             <div
@@ -124,8 +122,6 @@
 
             </div>
 
-
-            {/* CATEGORY */}
             <div>
 
             <h3 className="text-xl font-bold text-[#002147] mb-4">
@@ -214,7 +210,6 @@
 
 
 
-            {/* CONTACT */}
             <div>
 
             <h3 className="text-xl font-bold text-[#002147] mb-4">
@@ -246,7 +241,6 @@
 
 
 
-            {/* RIGHT */}
             <div className="space-y-8">
 
             <div>
@@ -317,8 +311,6 @@
             </div>
 
 
-
-            {/* LOCATION */}
             <div>
 
             <h3 className="text-xl font-bold text-[#002147] mb-4">
@@ -404,7 +396,6 @@
 
 
 
-            {/* BUTTONS */}
             <div className="mt-12 space-y-4 max-w-full">
 
             <button
@@ -428,8 +419,6 @@
             </div>
 
 
-
-            {/* TIPS */}
             <div className="mt-16 pt-8 border-t">
 
             <div className="flex items-center gap-2 mb-4">

@@ -1,22 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCart } from "@/app/context/CartContext";
-import { useNotification } from "@/app/context/NotificationContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation"; 
 import { Lock, ArrowLeft, MapPin, CreditCard, Loader2 } from "lucide-react";
 import ValuePropsSection from "@/components/buyer/listings/ValuePropsSection";
 
+const createIdempotencyKey = () => {
+    if (typeof window !== "undefined" && window.crypto?.randomUUID) {
+        return window.crypto.randomUUID();
+    }
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
+};
+
 export default function ReviewOrderPage() {
     const router = useRouter();
     const { cartItems, cartTotal, cartCount, clearCart } = useCart();
-    const { addNotification } = useNotification();
     
     const [isMounted, setIsMounted] = useState(false);
     const [checkoutData, setCheckoutData] = useState<any>(null);
     const [paymentData, setPaymentData] = useState<any>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const idempotencyKeyRef = useRef(createIdempotencyKey());
 
     useEffect(() => {
         setIsMounted(true);
@@ -39,7 +48,6 @@ export default function ReviewOrderPage() {
         }).format(price);
     };
 
-    // --- TEST MODE Backend Integration ---
     const handleCompletePurchase = async (e: React.MouseEvent) => {
         e.preventDefault();
         if (isSubmitting) return;
@@ -47,11 +55,11 @@ export default function ReviewOrderPage() {
         setIsSubmitting(true);
 
         try {
-            // 1. Create the order in the database
             const response = await fetch("/api/orders/checkout", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "Idempotency-Key": idempotencyKeyRef.current,
                 },
                 body: JSON.stringify({
                     pickupLocation: `${checkoutData?.street || 'N/A'}, ${checkoutData?.city || ''}`,
@@ -61,30 +69,20 @@ export default function ReviewOrderPage() {
 
             const data = await response.json();
 
-            // NOTE: Even if payment initialization fails in the backend (Paystack Error), 
-            // the order record is still likely created in your DB. 
-            // We check for response.ok to ensure the Prisma logic finished.
             if (!response.ok && data.message !== "Payment initialization failed") {
                 throw new Error(data.message || "Failed to create order");
             }
 
-            // 2. Trigger Notification
-            addNotification({
-                title: "Order Placed!",
-                message: `Order for ${cartCount} items totaling ${formatPrice(finalTotal)} has been recorded.`,
-                type: "order"
-            });
-
-            // 3. Cleanup State
             clearCart();
             sessionStorage.removeItem("swapyard_checkout");
             sessionStorage.removeItem("swapyard_payment");
 
-            // 4. Skip Paystack and go straight to success
             router.push("/order-success");
 
         } catch (error: any) {
             console.error("Purchase Error:", error);
+            // Rotate the key so a retry after an error gets a fresh key
+            idempotencyKeyRef.current = createIdempotencyKey();
             alert(error.message || "An error occurred. Check if items are in your DB cart.");
         } finally {
             setIsSubmitting(false);
