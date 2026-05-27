@@ -32,6 +32,8 @@ export default function ProductDetailsPage() {
   const router = useRouter();
   const params = useParams();
 
+  const slug = typeof params?.slug === 'string' ? params.slug : Array.isArray(params?.slug) ? params.slug[0] : '';
+
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
 
@@ -50,33 +52,33 @@ export default function ProductDetailsPage() {
       minimumFractionDigits: 0,
     }).format(price);
 
-  useEffect(() => {
-    if (!params.slug) return;
+useEffect(() => {
+  if (!slug) return;
 
-    let cancelled = false;
+  let cancelled = false;
 
-    const fetchProduct = async () => {
-      setIsLoading(true);
-      setError("");
-      try {
-        const res = await fetch(`/api/listing/${params.slug}`);
-        const data = await res.json();
-        if (cancelled) return;
-        if (data.ok) {
-          setProduct(data.listing);
-        } else {
-          setError(data.message || "Failed to load product details.");
-        }
-      } catch {
-        if (!cancelled) setError("Network error occurred.");
-      } finally {
-        if (!cancelled) setIsLoading(false);
+  const fetchProduct = async () => {
+    setIsLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/listing/${slug}`);
+      const data = await res.json();
+      if (cancelled) return;
+      if (data.ok) {
+        setProduct(data.listing);
+      } else {
+        setError(data.message || "Failed to load product details.");
       }
-    };
+    } catch {
+      if (!cancelled) setError("Network error occurred.");
+    } finally {
+      if (!cancelled) setIsLoading(false);
+    }
+  };
 
-    fetchProduct();
-    return () => { cancelled = true; };
-  }, [params.slug]);
+  fetchProduct();
+  return () => { cancelled = true; };
+}, [slug]); 
 
   const productId = product?.id;
   const categoryName = product?.category?.name;
@@ -111,18 +113,16 @@ export default function ProductDetailsPage() {
       ? product.images.map((img: any) => img.url)
       : FALLBACK_IMAGES;
 
-  const handleAddToCart = async () => {
-    if (!product || product.status !== "AVAILABLE") return;
+ const handleAddToCart = async () => {
+  if (!product || !product.id || product.status !== "AVAILABLE") return;
 
-    addToCart({
-      id: product.id,
-      title: product.name,
-      price: product.price,
-      imageUrl: displayImages[0],
-      quantity,
-    });
-
-    toast.success(`Successfully added ${quantity} item(s) to your cart!`);
+  addToCart({
+    id: product.id,
+    title: product.name,
+    price: product.price,
+    imageUrl: displayImages[0],
+    quantity,
+  });
 
     try {
       const res = await fetch("/api/cart", {
@@ -139,6 +139,9 @@ export default function ProductDetailsPage() {
           console.error("Cart sync error:", data.message);
         }
       }
+
+       toast.success(`Successfully added ${quantity} item(s) to your cart!`);
+
     } catch (err) {
       console.error("Error syncing cart to database:", err);
     }
@@ -459,29 +462,6 @@ export default function ProductDetailsPage() {
                 </button>
               </div> */}
             </div>
-
-            {/* <div
-              className="relative w-full rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-gray-100"
-              style={{ height: "140px" }}
-            >
-              <img
-                src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=600&q=80"
-                alt="Map snippet"
-                className="w-full h-full object-cover opacity-80 absolute inset-0"
-              />
-              <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#002147] text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-lg z-10 cursor-pointer">
-                1
-              </div>
-              <div className="absolute bottom-0 inset-x-0 bg-white/95 backdrop-blur-sm p-3 flex justify-between items-center border-t border-gray-200">
-                <div className="flex items-center text-[11px] font-extrabold text-gray-800 line-clamp-1 pr-2">
-                  <MapPin className="w-4 h-4 mr-1.5 text-gray-500 shrink-0" />
-                  {product.location || "N/A"}, {product.state || "N/A"}
-                </div>
-                <button className="text-[11px] font-extrabold text-[#002147] hover:underline cursor-pointer shrink-0">
-                  Get Directions
-                </button>
-              </div>
-            </div> */}
           </div>
         </div>
 

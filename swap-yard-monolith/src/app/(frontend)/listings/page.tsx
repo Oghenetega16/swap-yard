@@ -184,7 +184,7 @@ function ListingsContent() {
     router.push(pathname);
   };
 
-  // UPDATED: Now accepts the specific value to remove so it doesn't wipe out arrays
+
   const removeSpecificFilter = (key: string, valueToRemove?: string) => {
     const params = new URLSearchParams(searchParams.toString());
     
@@ -193,10 +193,9 @@ function ListingsContent() {
       const currentValues = params.getAll(key);
       if (currentValues.length > 1) {
         params.delete(key);
-        // Put back all the other values EXCEPT the one we are removing
         currentValues.filter(v => v !== valueToRemove).forEach(v => params.append(key, v));
       } else {
-        params.delete(key); // If it's the last one, just delete the key entirely
+        params.delete(key); 
       }
     } else {
       params.delete(key); // Fallback for single-value filters
@@ -206,9 +205,8 @@ function ListingsContent() {
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  // UPDATED: Added the raw 'value' so ActiveFiltersBar can pass it to the remove function
   const activeFiltersPills = Array.from(searchParams.entries())
-    .filter(([key]) => key !== "page" && key !== "limit") // Hide pagination from pills
+    .filter(([key]) => key !== "page" && key !== "limit")
     .map(([key, value]) => ({
       key: key, 
       value: value,
@@ -229,7 +227,7 @@ function ListingsContent() {
     <div className="min-h-screen bg-white">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* DESKTOP ONLY: Top Row */}
+
         <div className="hidden lg:flex flex-row items-center justify-between gap-4 mb-8 pb-6 border-b border-gray-100">
           <form onSubmit={handleSearchSubmit} className="flex items-center gap-3 w-full max-w-2xl">
             <div className="relative flex-1">
@@ -367,8 +365,21 @@ function ListingsContent() {
             ) : viewMode === "grid" ? (
               <>
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                  {listings.map((listing, i) => (
-                    <ListingCard key={listing.id || i} {...listing} />
+                  {listings.map((listing) => (
+                    <ListingCard 
+                     
+                      id={listing.id}
+                      slug={listing.slug}
+                      title={listing.title}
+                      category={listing.category}
+                      price={listing.price}
+                      location={listing.location}
+                      condition={listing.condition}
+                      imageUrl={listing.imageUrl}
+                      isVerified={listing.isVerified}
+                      rating={listing.rating}
+                      reviewsCount={listing.reviewsCount}
+                    />
                   ))}
                 </div>
                 {meta.pages > 1 && (
@@ -416,7 +427,6 @@ function ListingsContent() {
                 )}
               </div>
             )}
-            {/* ========================================================= */}
 
           </div>
         </div>

@@ -13,7 +13,7 @@ export const AppDownloadSection = () => {
                     <Button variant="primary">
                         
                         <Link href="/listings" passHref>
-                            Get the App
+                            Browse Website
                         </Link>
                 </Button>
                 </div>

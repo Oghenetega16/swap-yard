@@ -19,6 +19,7 @@ export const LatestListings = () => {
         if (data.ok) {
           const mappedData = data.items.map((item: any) => ({
             id: item.id,
+            slug: item.slug,
             title: item.name,
             category: item.category?.name || "General",
             price: item.price,
