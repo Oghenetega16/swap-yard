@@ -20,8 +20,6 @@ export default async function BuyerLayout({
     try {
   const { payload } = await jwtVerify(token, secret);
 
-  console.log("Decoded token:", payload);
-
   decoded = payload as {
     userId: string;
     role: string;
