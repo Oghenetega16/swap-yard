@@ -105,52 +105,64 @@ function ListingsContent() {
   const [meta, setMeta] = useState({ total: 0, page: 1, pages: 1 });
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchListings = async () => {
-      setIsLoading(true);
-      try {
-        const queryString = searchParams.toString();
-        const res = await fetch(`/api/listing?${queryString}`);
-        const data = await res.json();
-        
-        if (data.ok) {
-          const mappedData = data.items.map((item: any, index: number) => {
-            const dummyCoords = [
-              { lat: 6.5568, lng: 3.3852 }, { lat: 6.5244, lng: 3.3792 },
-              { lat: 6.4531, lng: 3.3958 }, { lat: 6.6018, lng: 3.3515 }
-            ];
-            
-            return {
-              id: item.id,
-              slug: item.slug,
-              title: item.name,
-              category: item.category?.name || "Uncategorized",
-              price: item.price,
-              location: item.location || "Location not specified",
-              condition: item.condition || "Used",
-              imageUrl: item.images && item.images.length > 0 
-                ? item.images[0].url 
-                : "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?q=80&w=500&auto=format&fit=crop",
-              isVerified: true, // Mocked for UI
-              rating: 4.8,      // Mocked for UI
-              reviewsCount: 12, // Mocked for UI
-              lat: dummyCoords[index % dummyCoords.length].lat,
-              lng: dummyCoords[index % dummyCoords.length].lng,
-            };
-          });
+useEffect(() => {
+  const fetchListings = async () => {
+    setIsLoading(true);
+    try {
+      const queryString = searchParams.toString();
+      const res = await fetch(`/api/listing?${queryString}`);
+      const alldata = await res.json();
 
-          setListings(mappedData);
-          setMeta(data.meta);
-        }
-      } catch (error) {
-        console.error("Error fetching listings:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      const filteredItems = alldata.items.filter(
+        (item: any) => item.status !== "SOLD"
+      );
 
-    fetchListings();
-  }, [searchParams]);
+      const mappedData = filteredItems.map((item: any, index: number) => {
+        const dummyCoords = [
+          { lat: 6.5568, lng: 3.3852 },
+          { lat: 6.5244, lng: 3.3792 },
+          { lat: 6.4531, lng: 3.3958 },
+          { lat: 6.6018, lng: 3.3515 },
+        ];
+
+        return {
+          id: item.id,
+          slug: item.slug,
+          title: item.name,
+          category: item.category?.name || "Uncategorized",
+          price: item.price,
+          location: item.location || "Location not specified",
+          condition: item.condition || "Used",
+          imageUrl:
+            item.images && item.images.length > 0
+              ? item.images[0].url
+              : "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?q=80&w=500&auto=format&fit=crop",
+          isVerified: true,
+          rating: 4.8,
+          reviewsCount: 12,
+          status: item.status,
+          lat: dummyCoords[index % dummyCoords.length].lat,
+          lng: dummyCoords[index % dummyCoords.length].lng,
+        };
+      });
+
+      setListings(mappedData);
+
+      setMeta({
+        ...alldata.meta,
+        total: filteredItems.length, 
+      });
+    } catch (error) {
+      console.error("Error fetching listings:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  fetchListings();
+}, [searchParams]);
+
+
 
   const handleSearchSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -219,6 +231,7 @@ function ListingsContent() {
     price: new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 0 }).format(item.price),
     location: item.location,
     image: item.imageUrl, 
+    status: item.status,
     lat: item.lat,
     lng: item.lng
   }));
@@ -365,9 +378,9 @@ function ListingsContent() {
             ) : viewMode === "grid" ? (
               <>
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                  {listings.map((listing) => (
+                  {listings.map((listing, i) => (
                     <ListingCard 
-                     
+                     key={i}
                       id={listing.id}
                       slug={listing.slug}
                       title={listing.title}
@@ -377,6 +390,7 @@ function ListingsContent() {
                       condition={listing.condition}
                       imageUrl={listing.imageUrl}
                       isVerified={listing.isVerified}
+                      status={listing.status}
                       rating={listing.rating}
                       reviewsCount={listing.reviewsCount}
                     />
