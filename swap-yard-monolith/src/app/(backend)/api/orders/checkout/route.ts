@@ -145,7 +145,6 @@ export async function POST(req: Request) {
           include: { payment: true },
         });
 
-        // Safety lock: only mark listings that are still AVAILABLE as SOLD
         await tx.listing.updateMany({
           where: { id: { in: listingIds }, status: "AVAILABLE" },
           data: { status: "SOLD" },
@@ -155,7 +154,7 @@ export async function POST(req: Request) {
 
         return created;
       },
-      // Increase timeout to 15 s — 3 operations is fine, just needs headroom
+
       { timeout: 15_000 }
     );
 

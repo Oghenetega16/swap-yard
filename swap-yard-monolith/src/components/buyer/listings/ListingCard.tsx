@@ -19,6 +19,7 @@ export interface ListingCardProps {
   isVerified: boolean;
   rating: number;
   reviewsCount: number;
+  status: "SOLD" | "AVAILABLE";
 }
 
 export default function ListingCard({
@@ -33,7 +34,13 @@ export default function ListingCard({
   isVerified,
   rating,
   reviewsCount,
+  status,
 }: ListingCardProps) {
+
+  if (status === "SOLD") {
+    return null;
+  }
+
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
 
