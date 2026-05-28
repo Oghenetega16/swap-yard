@@ -46,11 +46,11 @@ export const Categories = () => {
                 const res = await fetch("/api/category");
                 const data = await res.json();
 
-                const formatted = data.map((cat: any) => ({
-                    title: cat.name,
-                    href: `/categories/${cat.slug || cat.id}`,
-                    image: cat.image || "/assets/images/placeholder.jpg",
-                }));
+               const formatted = data.map((cat: any) => ({
+                title: cat.name,
+                href: `/listings?category=${encodeURIComponent(cat.name)}`,
+                image: cat.image || "/assets/images/placeholder.jpg",
+            }));
 
                 setCategories(formatted);
             } catch (error) {
