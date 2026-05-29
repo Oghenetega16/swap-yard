@@ -10,19 +10,15 @@ export default function OrderSuccessPage() {
     const [orderId, setOrderId] = useState("");
 
     useEffect(() => {
-        // Generate a random order ID for the UI
         setOrderId(`SY-${Math.floor(100000 + Math.random() * 900000)}`);
         
-        // Empty the cart as soon as the user hits the success page!
         clearCart();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (
         <div className="min-h-[80vh] bg-white flex flex-col items-center justify-center px-4 py-16">
             <div className="max-w-lg w-full text-center">
                 
-                {/* Success Icon Animation */}
                 <div className="relative w-24 h-24 mx-auto mb-8">
                     <div className="absolute inset-0 bg-green-100 rounded-full animate-ping opacity-70"></div>
                     <div className="relative bg-green-50 rounded-full w-full h-full flex items-center justify-center border-4 border-green-500">

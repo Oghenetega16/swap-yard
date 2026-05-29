@@ -92,7 +92,6 @@ export async function GET(
     return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }
-
 export async function PATCH(
   req: Request,
   ctx: { params: Promise<{ id: string }> }
@@ -106,8 +105,6 @@ export async function PATCH(
 
     const { id } = await ctx.params;
     const body = await req.json();
-
-    // Validate input
     const parsed = updateOrderSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -117,12 +114,11 @@ export async function PATCH(
           errors: parsed.error.flatten().fieldErrors,
         },
         { status: 400 }
-      );
+      )
     }
 
     const newStatus = parsed.data.status;
 
-    // Get order
     const existingOrder = await prisma.order.findFirst({
       where: {
         id,
@@ -144,15 +140,10 @@ export async function PATCH(
       return NextResponse.json({ message: "Order not found" }, { status: 404 });
     }
 
-  
-
     const isBuyer = existingOrder.buyerId === userId;
-
     const isSeller = existingOrder.items.some(
       (item) => item.sellerId === userId
     );
-
-
     const currentStatus = existingOrder.status;
 
     if (newStatus === "DELIVERED" && !isSeller) {
@@ -175,7 +166,6 @@ export async function PATCH(
       );
     }
 
-
     if (newStatus === "DELIVERED" && currentStatus !== "PAID") {
       return NextResponse.json(
         { message: "Order must be PAID before delivery" },
@@ -197,7 +187,6 @@ export async function PATCH(
       );
     }
 
-
     const updateData: any = {
       status: newStatus,
     };
@@ -214,41 +203,59 @@ export async function PATCH(
       updateData.cancelledAt = new Date();
     }
 
+    const order = await prisma.$transaction(async (tx) => {
+      if (newStatus === "CANCELLED") {
+        const listingIds = existingOrder.items
+          .map((item) => item.listingId)
+          .filter(Boolean) as string[];
 
-    const order = await prisma.order.update({
-      where: { id },
-      data: updateData,
-      include: {
-        buyer: {
-          select: {
-            id: true,
-            firstname: true,
-            lastname: true,
-            email: true,
-          },
-        },
-        items: {
-          include: {
-            listing: {
-              select: {
-                id: true,
-                name: true,
-                price: true,
+        if (listingIds.length > 0) {
+          await tx.listing.updateMany({
+            where: {
+              id: { in: listingIds },
+            },
+            data: {
+              status: "AVAILABLE",
+            },
+          });
+        }
+      }
+
+      return await tx.order.update({
+        where: { id },
+        data: updateData,
+        include: {
+          buyer: {
+            select: {
+              id: true,
+              firstname: true,
+              lastname: true,
+              email: true,
               },
             },
-            seller: {
-              select: {
-                id: true,
-                firstname: true,
-                lastname: true,
-                email: true,
+            items: {
+              include: {
+                listing: {
+                  select: {
+                    id: true,
+                    name: true,
+                    price: true,
+                  },
+                },
+                seller: {
+                  select: {
+                    id: true,
+                    firstname: true,
+                    lastname: true,
+                    email: true,
+                  },
+                },
               },
             },
+            payment: true,
           },
-        },
-        payment: true,
-      },
-    });
+        });
+    }, {timeout: 10000});
 
     return NextResponse.json(
       {
