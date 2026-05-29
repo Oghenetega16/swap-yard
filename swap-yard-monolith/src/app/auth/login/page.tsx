@@ -84,7 +84,7 @@ export default function LoginPage() {
             // ==========================================
             
             if (data.user?.role?.toLowerCase() === "seller") {
-                router.push("/seller/overview");
+                router.push("/seller/account");
             } else {
                 router.push("/listings"); 
             }

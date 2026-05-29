@@ -109,11 +109,13 @@ interface CancelModalProps {
 function CancelModal({ order, onClose, onCancelled }: CancelModalProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
     const paid = hasPaid(order.status);
 
     const handleCancel = async () => {
         setLoading(true);
         setError(null);
+        setSuccess(null)
         try {
             const res = await fetch(`/api/orders/${order.id}`, {
                 method: "PATCH",
@@ -122,10 +124,13 @@ function CancelModal({ order, onClose, onCancelled }: CancelModalProps) {
             });
             const data = await res.json();
             if (!res.ok || !data.ok) throw new Error(data.message || "Failed to cancel order.");
+            setSuccess("Order cancelled successfully.");
+            setError(null)
             onCancelled(order.id);
             onClose();
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "Something went wrong.");
+            setSuccess(null)
         } finally {
             setLoading(false);
         }
@@ -147,7 +152,6 @@ function CancelModal({ order, onClose, onCancelled }: CancelModalProps) {
 
                 {/* Body */}
                 <div className="px-6 py-5 flex flex-col gap-4">
-                    {/* Item preview */}
                     <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3 border border-gray-100">
                         <img
                             src={order.items[0]?.listing?.images[0]?.url || "https://placehold.co/56x56/f5f5f5/aaa?text=Item"}
@@ -161,13 +165,11 @@ function CancelModal({ order, onClose, onCancelled }: CancelModalProps) {
                         <span className="text-sm font-bold text-gray-800 shrink-0">{formatPrice(order.totalAmount)}</span>
                     </div>
 
-                    {/* Warning */}
                     <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 text-sm text-orange-800 leading-relaxed">
                         <p className="font-semibold mb-1">Before you cancel, please note:</p>
                         <p>Cancelling immediately makes this item available to other buyers. Even if you change your mind, someone else may have already purchased it by then.</p>
                     </div>
 
-                    {/* Refund notice — only if they already paid */}
                     {paid && (
                         <div className="bg-red-50 border border-red-100 rounded-xl p-4 text-sm text-red-800 leading-relaxed">
                             <p className="font-semibold mb-1">You have already paid for this order.</p>
@@ -182,6 +184,7 @@ function CancelModal({ order, onClose, onCancelled }: CancelModalProps) {
                     )}
 
                     {error && <p className="text-xs text-red-500">{error}</p>}
+                    
                 </div>
 
                 {/* Footer */}

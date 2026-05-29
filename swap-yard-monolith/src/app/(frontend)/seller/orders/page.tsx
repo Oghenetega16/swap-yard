@@ -11,26 +11,25 @@ export default function SellerOrders() {
             case 'DELIVERED':
             case 'COMPLETED':
             case 'BUYER_CONFIRMED':
-                return "text-[#2ECC71] border-[#2ECC71] bg-green-50"; 
+                return "text-[#2ECC71] border-[#2ECC71] bg-green-50";
             case 'PAID':
-                return "text-[#3498DB] border-[#3498DB] bg-blue-50"; 
+                return "text-[#3498DB] border-[#3498DB] bg-blue-50";
             case 'SHIPPED':
-                return "text-[#F1C40F] border-[#F1C40F] bg-yellow-50"; 
+                return "text-[#F1C40F] border-[#F1C40F] bg-yellow-50";
             case 'PENDING_PAYMENT':
             case 'PROCESSING':
                 return "text-gray-600 border-gray-300 bg-gray-50";
             case 'CANCELLED':
             case 'REFUNDED':
             case 'DISPUTED':
-                return "text-[#E74C3C] border-[#E74C3C] bg-red-50"; 
+                return "text-[#E74C3C] border-[#E74C3C] bg-red-50";
             default:
                 return "text-gray-500 border-gray-200 bg-gray-50";
         }
     };
 
-    const formatStatusText = (status: string) => {
-        return status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
-    };
+    const formatStatusText = (status: string) =>
+        status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
 
     if (state.isLoading) {
         return (
@@ -42,19 +41,19 @@ export default function SellerOrders() {
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
-            
+
             {state.error && (
                 <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-lg text-sm font-medium" role="alert">
                     {state.error}
                 </div>
             )}
 
-            {/* Top Toolbar: Search & Sort */}
+            {/* Toolbar */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div className="relative w-full max-w-2xl">
-                    <input 
-                        type="text" 
-                        placeholder="Search by Item, Buyer, or Order ID" 
+                    <input
+                        type="text"
+                        placeholder="Search by Item, Buyer, or Order ID"
                         value={state.searchQuery}
                         onChange={(e) => setters.setSearchQuery(e.target.value)}
                         className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-[#002147]"
@@ -65,7 +64,7 @@ export default function SellerOrders() {
                 <div className="flex items-center gap-3 shrink-0">
                     <label htmlFor="sortOrders" className="text-sm text-gray-700 font-medium">Sort by:</label>
                     <div className="relative">
-                        <select 
+                        <select
                             id="sortOrders"
                             value={state.sortBy}
                             onChange={(e) => setters.setSortBy(e.target.value)}
@@ -79,7 +78,7 @@ export default function SellerOrders() {
                 </div>
             </div>
 
-            {/* Orders Table */}
+            {/* Table */}
             <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-200">
                     <thead>
@@ -102,8 +101,11 @@ export default function SellerOrders() {
                             </tr>
                         ) : (
                             state.orders.map((order) => {
-                                // According to backend rules, Seller can mark as Delivered if status is PAID
-                                const canDeliver = order.status === "PAID" || order.status === "SHIPPED";
+                                // PAID → seller marks as Shipped
+                                const canShip = order.status === "PAID";
+                                // SHIPPED → seller marks as Delivered
+                                const canDeliver = order.status === "SHIPPED";
+                                const isUpdating = state.isUpdating === order.rawOrderId;
 
                                 return (
                                     <tr key={order.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
@@ -118,14 +120,28 @@ export default function SellerOrders() {
                                             </span>
                                         </td>
                                         <td className="px-4 py-5 text-right">
+                                            {canShip && (
+                                                <button
+                                                    onClick={() => handlers.updateOrderStatus(order.rawOrderId, "SHIPPED")}
+                                                    disabled={isUpdating}
+                                                    className="inline-flex items-center gap-1.5 bg-[#F1C40F] hover:bg-yellow-400 text-gray-900 px-3 py-1.5 rounded-md text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer"
+                                                >
+                                                    {isUpdating ? (
+                                                        <div className="w-3.5 h-3.5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+                                                    ) : (
+                                                        <Truck size={14} />
+                                                    )}
+                                                    Mark Shipped
+                                                </button>
+                                            )}
                                             {canDeliver && (
                                                 <button
                                                     onClick={() => handlers.updateOrderStatus(order.rawOrderId, "DELIVERED")}
-                                                    disabled={state.isUpdating === order.rawOrderId}
+                                                    disabled={isUpdating}
                                                     className="inline-flex items-center gap-1.5 bg-[#002147] hover:bg-[#001733] text-white px-3 py-1.5 rounded-md text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer"
                                                 >
-                                                    {state.isUpdating === order.rawOrderId ? (
-                                                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                    {isUpdating ? (
+                                                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                                     ) : (
                                                         <Truck size={14} />
                                                     )}

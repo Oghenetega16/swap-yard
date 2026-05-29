@@ -18,6 +18,7 @@ interface UserData {
     firstname?: string;
     lastname?: string;
     email?: string;
+    role?: string;
 }
 
 export const Navbar = ({ onOpenSidebar }: NavbarProps) => {
@@ -122,6 +123,7 @@ export const Navbar = ({ onOpenSidebar }: NavbarProps) => {
         : "bg-white shadow-sm border-b border-gray-100 py-3 text-gray-800";
 
     const isAuth = user !== null;
+    const isBuyer = isAuth && user?.role === "BUYER";
 
     const hiddenRoutes = ["/auth/login", "/auth/signup", "/auth/verify", "/seller/verify"];
     const shouldHideNavbar = hiddenRoutes.some(route => pathname?.startsWith(route));
@@ -157,12 +159,12 @@ export const Navbar = ({ onOpenSidebar }: NavbarProps) => {
                 <div className="hidden lg:flex gap-8 items-center text-sm font-semibold">
                     <Link href="/listings" className="hover:text-[#EB3B18] transition-colors cursor-pointer">Browse</Link>
                     <Link href="/about" className="hover:text-[#EB3B18] transition-colors cursor-pointer">About Us</Link>
-                    { isAuth && (
-                        <Link href="/orders" className="hover:text-[#EB3B18] transition-colors cursor-pointer">Orders</Link>
-                    )}
-                    { isAuth && (
-                        <Link href="/wishlist" className="hover:text-[#EB3B18] transition-colors cursor-pointer">Wishlist</Link>
-                    )}
+                   { isBuyer && (
+                            <Link href="/orders" className="hover:text-[#EB3B18] transition-colors cursor-pointer">Orders</Link>
+                        )}
+                        { isBuyer && (
+                            <Link href="/wishlist" className="hover:text-[#EB3B18] transition-colors cursor-pointer">Wishlist</Link>
+                        )}                                         
                     
                 </div>
 

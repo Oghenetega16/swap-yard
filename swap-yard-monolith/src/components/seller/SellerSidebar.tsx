@@ -21,12 +21,10 @@ export const SellerSidebar = () => {
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const navItems = [
-        { name: "Overview", href: "/seller/overview", icon: LayoutGrid },
         { name: "Post Listing", href: "/seller/post-listing", icon: PlusCircle }, 
-        { name: "Messages", href: "/seller/messages", icon: MessageSquare },
         { name: "Orders", href: "/seller/orders", icon: ShoppingBag },
         { name: "My Store", href: "/seller/store", icon: Store },
-        { name: "Billings", href: "/seller/billings", icon: Receipt },
+        { name: "Payments", href: "/seller/billings", icon: Receipt },
     ];
 
     const bottomItems = [
