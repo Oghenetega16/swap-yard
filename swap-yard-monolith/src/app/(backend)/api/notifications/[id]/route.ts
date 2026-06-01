@@ -75,7 +75,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     const updated = await prisma.notification.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: { read: true },
     });
 

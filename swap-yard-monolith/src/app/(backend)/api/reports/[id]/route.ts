@@ -35,7 +35,7 @@ const STATUS_NOTIFICATION: Record<string, { type: string; message: (id: string) 
   },
 };
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const token = await getCookie(req, "session");
     if (!token) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -51,7 +51,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
     const report = await prisma.report.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
       include: {
         reporter: { select: { id: true, firstname: true, lastname: true } },
         listing: { select: { id: true, name: true, slug: true } },
@@ -73,7 +73,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const token = await getCookie(req, "session");
     if (!token) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -103,7 +103,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     const { status } = validatedInput.data;
 
     const existingReport = await prisma.report.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
     });
 
     if (!existingReport) {
@@ -118,7 +118,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
     const [report] = await prisma.$transaction(async (tx) => {
       const updated = await tx.report.update({
-        where: { id: params.id },
+        where: { id: (await params).id },
         data: { status },
         include: {
           reporter: { select: { id: true, firstname: true, lastname: true } },
