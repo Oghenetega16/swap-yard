@@ -282,7 +282,7 @@ export async function PATCH(
     }
 
     const listing = await prisma.listing.update({
-      where: { id: existing.id },
+      where: { slug: existing.slug },
       data,
       include: {
         images: true,
@@ -336,10 +336,10 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  ctx: { params: Promise<{ id: string }> }
+  ctx: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const { id } = await ctx.params;
+    const { slug } = await ctx.params;
 
     const auth = await getAuthenticatedSeller(req);
     if ("error" in auth) return auth.error;
@@ -347,7 +347,7 @@ export async function DELETE(
     const { user } = auth;
 
     const existing = await prisma.listing.findUnique({
-      where: { id },
+      where: { slug },
       include: { images: true },
     });
 
@@ -360,7 +360,7 @@ export async function DELETE(
     }
 
     await prisma.listing.delete({
-      where: { id },
+      where: { slug },
     });
 
     const publicIds = existing.images
