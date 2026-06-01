@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 export interface CartItem {
-  id: string; // listingId
+  id: string;
   title: string;
   price: number;
   imageUrl: string;
@@ -29,18 +29,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setIsMounted(true);
-    
+
     const initializeCart = async () => {
       try {
         const res = await fetch("/api/cart");
         if (res.ok) {
           const data = await res.json();
-          // FIXED: Map backend listing structure to frontend CartItem interface
           if (data.items && Array.isArray(data.items)) {
             const mappedItems: CartItem[] = data.items.map((dbItem: any) => ({
               id: dbItem.listing.id,
               title: dbItem.listing.name,
-              price: Number(dbItem.listing.price), // Force to number
+              price: Number(dbItem.listing.price),
               imageUrl: dbItem.listing.images?.[0]?.url || "",
               quantity: dbItem.quantity,
             }));
@@ -85,31 +84,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = (newItem: CartItem) => {
     setCartItems((prev) => {
-      const existingItem = prev.find((item) => item.id === newItem.id);
-      let updatedCart;
-      if (existingItem) {
-        updatedCart = prev.map((item) =>
-          item.id === newItem.id ? { ...item, quantity: item.quantity + newItem.quantity } : item
+      const existing = prev.find((item) => item.id === newItem.id);
+      if (existing) {
+        return prev.map((item) =>
+          item.id === newItem.id
+            ? { ...item, quantity: item.quantity + newItem.quantity }
+            : item
         );
-      } else {
-        updatedCart = [...prev, newItem];
       }
-      
-      const targetItem = updatedCart.find(i => i.id === newItem.id);
-      if (targetItem) syncItemToDB(targetItem.id, targetItem.quantity);
-      
-      return updatedCart;
+      return [...prev, newItem];
     });
+
+    syncItemToDB(newItem.id, newItem.quantity);
   };
 
   const removeFromCart = async (id: string) => {
     setCartItems((prev) => prev.filter((item) => item.id !== id));
     try {
-      // Your DELETE route expects listingId in the body
-      await fetch("/api/cart", { 
+      await fetch("/api/cart", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ listingId: id })
+        body: JSON.stringify({ listingId: id }),
       });
     } catch (err) {
       console.error("Failed to remove item from DB", err);
@@ -117,17 +112,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const updateQuantity = (id: string, type: "increase" | "decrease") => {
-    setCartItems((prev) => {
-      const updated = prev.map((item) => {
-        if (item.id === id) {
-          const newQty = type === "increase" ? item.quantity + 1 : Math.max(1, item.quantity - 1);
-          syncItemToDB(id, newQty);
-          return { ...item, quantity: newQty };
-        }
-        return item;
-      });
-      return updated;
-    });
+    setCartItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        const newQty =
+          type === "increase" ? item.quantity + 1 : Math.max(1, item.quantity - 1);
+        return { ...item, quantity: newQty };
+      })
+    );
+
+    const current = cartItems.find((item) => item.id === id);
+    if (current) {
+      const newQty =
+        type === "increase" ? current.quantity + 1 : Math.max(1, current.quantity - 1);
+      syncItemToDB(id, newQty);
+    }
   };
 
   const clearCart = () => {
@@ -135,21 +134,40 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("swapyard_cart");
   };
 
-  const syncCartWithDB = async () => {
-     // Push local items to DB logic here
-  };
+ const syncCartWithDB = async () => {
+  if (cartItems.length === 0) return;
 
-  // derived values with safety Number casting to prevent NaN
-  const cartTotal = cartItems.reduce((total, item) => {
-    return total + (Number(item.price) || 0) * (Number(item.quantity) || 0);
-  }, 0);
+  try {
+    await fetch("/api/cart/merge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        items: cartItems.map((item) => ({
+          listingId: item.id,
+          quantity: item.quantity,
+        })),
+      }),
+    });
+  } catch (err) {
+    console.error("Failed to sync local cart to DB", err);
+  }
+};
 
-  const cartCount = cartItems.reduce((count, item) => {
-    return count + (Number(item.quantity) || 0);
-  }, 0);
+
+  const cartTotal = cartItems.reduce(
+    (total, item) => total + (Number(item.price) || 0) * (Number(item.quantity) || 0),
+    0
+  );
+
+  const cartCount = cartItems.reduce(
+    (count, item) => count + (Number(item.quantity) || 0),
+    0
+  );
 
   return (
-    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, cartTotal, cartCount, clearCart, syncCartWithDB }}>
+    <CartContext.Provider
+      value={{ cartItems, addToCart, removeFromCart, updateQuantity, cartTotal, cartCount, clearCart, syncCartWithDB }}
+    >
       {children}
     </CartContext.Provider>
   );

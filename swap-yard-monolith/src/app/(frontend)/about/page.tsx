@@ -1,6 +1,7 @@
 import React from "react";
-import { ShieldCheck, CreditCard, MessageSquare, MapPin, Play } from "lucide-react";
+import { ShieldCheck, CreditCard, MapPin} from "lucide-react";
 import { Footer } from "@/components/landing/Footer";
+import Link from "next/link";
 
 export default function AboutPage() {
   return (
@@ -17,30 +18,24 @@ export default function AboutPage() {
           </p>
         </section>
 
-        {/* Video/Image Grid */}
         <section className="relative grid grid-cols-12 gap-4">
           <div className="col-span-7 relative rounded-2xl overflow-hidden shadow-xl">
             <img 
-              src="https://images.unsplash.com/photo-1556742044-3c52d6e88c62?auto=format&fit=crop&q=80&w=1000" 
+              src="https://res.cloudinary.com/defk6gaq2/image/upload/v1778946346/Household_op3i1l.jpg" 
               alt="People shopping" 
               className="w-full h-[400px] object-cover"
             />
           </div>
           <div className="col-span-7 col-start-6 -mt-32 relative z-10 rounded-2xl overflow-hidden shadow-2xl border-8 border-white">
             <img 
-              src="https://images.unsplash.com/photo-1556740734-7f9a2b7a0f42?auto=format&fit=crop&q=80&w=1000" 
+              src="https://res.cloudinary.com/defk6gaq2/image/upload/v1778946346/Master-Bedroom_wu0x2w.webp" 
               alt="Video thumbnail" 
               className="w-full h-[300px] object-cover"
             />
-            <div className="absolute inset-0 bg-black/20 flex items-center justify-center cursor-pointer group">
-              <div className="bg-red-600 p-4 rounded-full transition-transform group-hover:scale-110">
-                <Play className="text-white fill-current w-6 h-6" />
-              </div>
-            </div>
+            
           </div>
         </section>
 
-        {/* Mission Section */}
         <section className="grid md:grid-cols-3 gap-12 items-start">
           <h2 className="text-2xl font-bold text-slate-900">Our Mission</h2>
           <p className="text-sm text-slate-600 leading-relaxed">
@@ -51,19 +46,14 @@ export default function AboutPage() {
           </p>
         </section>
 
-        {/* Services Section */}
         <section className="grid md:grid-cols-2 gap-16 items-center">
           <div className="relative rounded-2xl overflow-hidden">
             <img 
-              src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=1000" 
+              src="https://res.cloudinary.com/defk6gaq2/image/upload/v1778946346/rooms-in-the-house_okqrvo.jpg" 
               alt="Showroom" 
               className="w-full h-[500px] object-cover"
             />
-            <div className="absolute inset-0 flex items-center justify-center">
-               <div className="bg-red-600 p-4 rounded-full">
-                <Play className="text-white fill-current w-6 h-6" />
-              </div>
-            </div>
+            
           </div>
           
           <div className="space-y-12">
@@ -75,15 +65,13 @@ export default function AboutPage() {
             <div className="grid grid-cols-2 gap-8">
               <ServiceItem icon={<ShieldCheck />} title="Verified Sellers" desc="Shop confidently with sellers who have been ID-verified" />
               <ServiceItem icon={<CreditCard />} title="Secure Payments" desc="Make payment confidently on our Platform" />
-              <ServiceItem icon={<MessageSquare />} title="Safe Messaging" desc="Chat securely via in-app messages or Whatsapp" />
               <ServiceItem icon={<MapPin />} title="Local Listings" desc="Buy and Sell within your city or neighborhood" />
             </div>
           </div>
         </section>
 
-        {/* CTA Section */}
         <section className="text-center py-20 relative overflow-hidden">
-            {/* Background decorative circles */}
+
             {[...Array(8)].map((_, i) => (
                 <div key={i} className={`absolute w-12 h-12 rounded-full bg-gradient-to-br from-slate-400 to-red-300 opacity-40`} 
                 style={{
@@ -96,7 +84,8 @@ export default function AboutPage() {
                 <h2 className="text-3xl font-bold mb-4">Ready to get started?</h2>
                 <p className="text-slate-500 text-sm mb-8">Explore thousands of products from trusted sellers near you.<br/>Browse unique secondhand furniture and home essentials.</p>
                 <button className="bg-[#F0441D] text-white px-10 py-3 rounded-lg font-bold hover:bg-red-600 transition-colors">
-                    Get Started
+                    
+                    <Link href="/listings">Get Started</Link>
                 </button>
             </div>
         </section>

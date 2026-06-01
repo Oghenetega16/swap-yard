@@ -21,6 +21,7 @@ export const getListingsSchema = z.object({
   condition: z.enum(["NEW", "FAIRLYNEW", "SECONDHAND", "FAIR", "GOOD"]).optional(),
   state: z.string().trim().min(1).optional(),
   sellerId: z.string().trim().cuid("Invalid sellerId").optional(),
+  category: z.string().optional(),
   categoryId: z.string().trim().cuid("Invalid categoryId").optional(),
   minPrice: z.coerce.number().nonnegative().optional(),
   maxPrice: z.coerce.number().nonnegative().optional(),

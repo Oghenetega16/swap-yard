@@ -14,14 +14,13 @@ interface SellerNavbarProps {
 export const SellerNavbar = ({ onOpenSidebar }: SellerNavbarProps) => {
     const pathname = usePathname();
     
-    // --- STATE: USER PROFILE ---
+
     const [profile, setProfile] = useState({
         firstName: "",
         lastName: "",
         avatarUrl: null as string | null
     });
 
-    // --- FETCH USER DATA ---
     useEffect(() => {
         const fetchProfile = async () => {
             try {
@@ -51,16 +50,13 @@ export const SellerNavbar = ({ onOpenSidebar }: SellerNavbarProps) => {
 
     const navLinks = [
         { name: "Dashboard", href: "/seller/overview" },
-        { name: "Products", href: "/seller/products" },
         { name: "My Store", href: "/seller/store" },
-        { name: "Help", href: "/seller/help" },
     ];
 
     return (
         <nav className="fixed w-full z-40 top-0 bg-white border-b border-gray-100 shadow-sm transition-all duration-300">
             <div className="container mx-auto px-4 md:px-8 flex items-center justify-between h-20">
                 
-                {/* Logo & Mobile Menu */}
                 <div className="flex items-center gap-4">
                     <button className="md:hidden text-gray-900 cursor-pointer" onClick={onOpenSidebar} aria-label="Open mobile menu">
                         <Menu size={24} aria-hidden="true" />
@@ -90,9 +86,6 @@ export const SellerNavbar = ({ onOpenSidebar }: SellerNavbarProps) => {
                     
                     {/* Icons */}
                     <div className="hidden sm:flex items-center gap-5">
-                        <Link href="/seller/messages" className="hover:text-[#EB3B18] transition-colors relative cursor-pointer" aria-label="Messages">
-                            <MessageSquare size={22} aria-hidden="true" />
-                        </Link>
                         <Link href="/seller/orders" className="hover:text-[#EB3B18] transition-colors cursor-pointer" aria-label="Orders">
                             <ShoppingBag size={22} aria-hidden="true" />
                         </Link>

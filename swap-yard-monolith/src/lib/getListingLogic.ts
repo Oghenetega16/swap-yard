@@ -7,6 +7,7 @@ export async function fetchListings(searchParams: URLSearchParams, extraWhere?: 
     q: searchParams.get("q") ?? undefined,
     status: searchParams.get("status") ?? undefined,
     condition: searchParams.get("condition") ?? undefined,
+    category: searchParams.get("category") ?? undefined,
     state: searchParams.get("state") ?? undefined,
     sellerId: searchParams.get("sellerId") ?? undefined,
     categoryId: searchParams.get("categoryId") ?? undefined,
@@ -23,15 +24,16 @@ export async function fetchListings(searchParams: URLSearchParams, extraWhere?: 
     throw new Error("INVALID_PARAMS");
   }
 
-  const { q, status, condition, state, sellerId, categoryId, minPrice, maxPrice, offersDelivery, negotiable, page, limit } = validatedQuery.data;
+  const { q, status, condition, state, category, sellerId, categoryId, minPrice, maxPrice, offersDelivery, negotiable, page, limit } = validatedQuery.data;
   const skip = (page - 1) * limit;
 
   const where: Prisma.ListingWhereInput = {
-    ...extraWhere, // Force categoryId here if provided
+    ...extraWhere,
     ...(status ? { status } : {}),
     ...(condition ? { condition } : {}),
     ...(state ? { state } : {}),
     ...(sellerId ? { sellerId } : {}),
+    ...(category ? { category: { name: { equals: category } } } : {}),
     ...(categoryId ? { categoryId } : {}),
     ...(offersDelivery !== undefined ? { offersDelivery } : {}),
     ...(negotiable !== undefined ? { negotiable } : {}),

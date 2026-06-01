@@ -19,9 +19,11 @@ export const LatestListings = () => {
         if (data.ok) {
           const mappedData = data.items.map((item: any) => ({
             id: item.id,
+            slug: item.slug,
             title: item.name,
             category: item.category?.name || "General",
             price: item.price,
+            status: item.status,
             location: item.location || "Lagos, Nigeria",
             condition: item.condition || "Barely Used",
             imageUrl: item.images?.[0]?.url || "/assets/images/placeholder.jpg",
@@ -29,7 +31,7 @@ export const LatestListings = () => {
             rating: 4.8,     
             reviewsCount: 12,
           }));
-          setListings(mappedData);
+          setListings(mappedData.filter((item: any) => item.status !== "SOLD"));
         }
       } catch (error) {
         console.error("Error fetching latest listings:", error);

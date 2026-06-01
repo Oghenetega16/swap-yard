@@ -83,7 +83,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const sessionToken = await createToken(user.id);
+    const sessionToken = await createToken(user.id, user.role);
 
     const res = NextResponse.json(
       { message: "Login successful", user },

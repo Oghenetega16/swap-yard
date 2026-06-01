@@ -37,6 +37,10 @@ model User {
   sellerAccount      SellerAccount?
   sellerOrderItems   OrderItem[]     @relation("SellerOrderItems")
   payouts            Payout[]        @relation("SellerPayouts")
+
+  reports            Report[]        @relation("Reporter")
+
+  notifications      notification[]
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -87,6 +91,8 @@ model Listing {
 
   sellerId       String
   seller         User              @relation(fields: [sellerId], references: [id])
+
+  reports        Report[]
 
   cartItems      CartItem[]
   orderItems     OrderItem[]
@@ -353,6 +359,43 @@ model idempotencyKey{
   key       String   @unique
   status    String   @default("PENDING")
   response  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  idempotencyKey String   @unique
+  reporterId  String
+  reporter    User     @relation("Reporter", fields: [reporterId], references: [id])
+  listingId   String
+  listing     Listing  @relation(fields: [listingId], references: [id])
+  type        String
+  reason      String
+  comment     String?
+  imageUrl1  String?
+  imagePublicId1 String?
+  imageUrl2  String?
+  imagePublicId2 String?
+  status      ReportStatus @default(OPEN)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum ReportStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  REJECTED
+}
+
+model notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  message   String
+  read      Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

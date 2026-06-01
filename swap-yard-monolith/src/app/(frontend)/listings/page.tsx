@@ -21,7 +21,7 @@ const HorizontalListingCard = ({ item }: { item: any }) => {
 
   return (
     <div className="flex gap-4 py-4 border-b border-gray-100 last:border-0 relative group">
-      <Link href={`/listings/${item.id}`} className="relative w-28 h-28 shrink-0 bg-gray-100 rounded-2xl overflow-hidden block">
+      <Link href={`/listings/${item.slug}`} className="relative w-28 h-28 shrink-0 bg-gray-100 rounded-2xl overflow-hidden block">
         <Image src={item.imageUrl} alt={item.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
       </Link>
       <div className="flex flex-col flex-1 py-1">
@@ -31,7 +31,7 @@ const HorizontalListingCard = ({ item }: { item: any }) => {
               <Heart className="w-5 h-5" />
             </button>
         </div>
-        <Link href={`/listings/${item.id}`} className="hover:text-[#EB3B18] transition-colors inline-block w-fit">
+        <Link href={`/listings/${item.slug}`} className="hover:text-[#EB3B18] transition-colors inline-block w-fit">
           <h3 className="text-sm font-bold text-gray-900 leading-tight mb-1.5 line-clamp-2 pr-2">
             {item.title}
           </h3>
@@ -43,7 +43,7 @@ const HorizontalListingCard = ({ item }: { item: any }) => {
           <Star className="w-3 h-3 mr-1 text-gray-400" /> {item.rating.toFixed(1)}({item.reviewsCount})
         </div>
         <div className="mt-auto">
-          <Link href={`/listings/${item.id}`} className="inline-block text-[11px] font-bold px-4 py-1.5 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
+          <Link href={`/listings/${item.slug}`} className="inline-block text-[11px] font-bold px-4 py-1.5 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
             View Listing
           </Link>
         </div>
@@ -52,7 +52,6 @@ const HorizontalListingCard = ({ item }: { item: any }) => {
   );
 };
 
-// MATCHES SCREENSHOT: Desktop grid under the map
 const AreaListingCardDesktop = ({ item }: { item: any }) => {
   const formattedPrice = new Intl.NumberFormat("en-NG", {
       style: "currency",
@@ -63,7 +62,7 @@ const AreaListingCardDesktop = ({ item }: { item: any }) => {
   return (
       <div className="flex flex-col gap-3 group">
           <div className="relative aspect-square w-full rounded-[1.25rem] overflow-hidden bg-gray-100">
-              <Link href={`/listings/${item.id}`} className="absolute inset-0 z-0">
+              <Link href={`/listings/${item.slug}`} className="absolute inset-0 z-0">
                 <Image src={item.imageUrl} alt={item.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
               </Link>
               <button aria-label="Save to favorites" className="absolute top-3 right-3 p-1.5 bg-white rounded-full text-gray-400 hover:text-red-500 shadow-sm transition-colors z-10 cursor-pointer">
@@ -71,7 +70,7 @@ const AreaListingCardDesktop = ({ item }: { item: any }) => {
               </button>
           </div>
           <div className="flex flex-col">
-              <Link href={`/listings/${item.id}`} className="hover:text-[#EB3B18] transition-colors z-10 inline-block w-fit">
+              <Link href={`/listings/${item.slug}`} className="hover:text-[#EB3B18] transition-colors z-10 inline-block w-fit">
                 <h3 className="font-bold text-[13px] text-gray-900 leading-tight mb-1 line-clamp-2 min-h-[2.5rem]">
                     {item.title}
                 </h3>
@@ -85,7 +84,7 @@ const AreaListingCardDesktop = ({ item }: { item: any }) => {
               </div>
               <div className="flex items-center justify-between mt-auto border-t border-gray-100 pt-3">
                   <span className="font-extrabold text-[15px] text-[#002147] tracking-tight">{formattedPrice}</span>
-                  <Link href={`/listings/${item.id}`} className="text-[10px] font-bold px-3 py-1.5 border border-gray-200 rounded-md text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer z-10">
+                  <Link href={`/listings/${item.slug}`} className="text-[10px] font-bold px-3 py-1.5 border border-gray-200 rounded-md text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer z-10">
                       View Listing
                   </Link>
               </div>
@@ -102,62 +101,69 @@ function ListingsContent() {
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
   
-  // Data Fetching State
   const [listings, setListings] = useState<any[]>([]);
   const [meta, setMeta] = useState({ total: 0, page: 1, pages: 1 });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch listings from the backend whenever the URL searchParams change
-  useEffect(() => {
-    const fetchListings = async () => {
-      setIsLoading(true);
-      try {
-        const queryString = searchParams.toString();
-        const res = await fetch(`/api/listing?${queryString}`);
-        const data = await res.json();
-        
-        if (data.ok) {
-          // MAP BACKEND DATA TO FRONTEND PROPS
-          const mappedData = data.items.map((item: any, index: number) => {
-            // Dummy coordinates until the backend supports lat/lng
-            const dummyCoords = [
-              { lat: 6.5568, lng: 3.3852 }, { lat: 6.5244, lng: 3.3792 },
-              { lat: 6.4531, lng: 3.3958 }, { lat: 6.6018, lng: 3.3515 }
-            ];
-            
-            return {
-              id: item.id,
-              title: item.name, // Map backend 'name' to frontend 'title'
-              category: item.category?.name || "Uncategorized",
-              price: item.price,
-              location: item.location || "Location not specified",
-              condition: item.condition || "Used",
-              // Use first image if available, else fallback
-              imageUrl: item.images && item.images.length > 0 
-                ? item.images[0].url 
-                : "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?q=80&w=500&auto=format&fit=crop",
-              isVerified: true, // Mocked for UI
-              rating: 4.8,      // Mocked for UI
-              reviewsCount: 12, // Mocked for UI
-              lat: dummyCoords[index % dummyCoords.length].lat,
-              lng: dummyCoords[index % dummyCoords.length].lng,
-            };
-          });
+useEffect(() => {
+  const fetchListings = async () => {
+    setIsLoading(true);
+    try {
+      const queryString = searchParams.toString();
+      const res = await fetch(`/api/listing?${queryString}`);
+      const alldata = await res.json();
 
-          setListings(mappedData);
-          setMeta(data.meta);
-        }
-      } catch (error) {
-        console.error("Error fetching listings:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      const filteredItems = alldata.items.filter(
+        (item: any) => item.status !== "SOLD"
+      );
 
-    fetchListings();
-  }, [searchParams]);
+      const mappedData = filteredItems.map((item: any, index: number) => {
+        const dummyCoords = [
+          { lat: 6.5568, lng: 3.3852 },
+          { lat: 6.5244, lng: 3.3792 },
+          { lat: 6.4531, lng: 3.3958 },
+          { lat: 6.6018, lng: 3.3515 },
+        ];
 
-  // Handle Search Submission
+        return {
+          id: item.id,
+          slug: item.slug,
+          title: item.name,
+          category: item.category?.name || "Uncategorized",
+          price: item.price,
+          location: item.location || "Location not specified",
+          condition: item.condition || "Used",
+          imageUrl:
+            item.images && item.images.length > 0
+              ? item.images[0].url
+              : "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?q=80&w=500&auto=format&fit=crop",
+          isVerified: true,
+          rating: 4.8,
+          reviewsCount: 12,
+          status: item.status,
+          lat: dummyCoords[index % dummyCoords.length].lat,
+          lng: dummyCoords[index % dummyCoords.length].lng,
+        };
+      });
+
+      setListings(mappedData);
+
+      setMeta({
+        ...alldata.meta,
+        total: filteredItems.length, 
+      });
+    } catch (error) {
+      console.error("Error fetching listings:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  fetchListings();
+}, [searchParams]);
+
+
+
   const handleSearchSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     updateFilters("q", searchInput);
@@ -190,19 +196,18 @@ function ListingsContent() {
     router.push(pathname);
   };
 
-  // UPDATED: Now accepts the specific value to remove so it doesn't wipe out arrays
+
   const removeSpecificFilter = (key: string, valueToRemove?: string) => {
     const params = new URLSearchParams(searchParams.toString());
     
-    // If we have a specific value and there are multiple of this key (e.g., checkboxes)
+
     if (valueToRemove) {
       const currentValues = params.getAll(key);
       if (currentValues.length > 1) {
         params.delete(key);
-        // Put back all the other values EXCEPT the one we are removing
         currentValues.filter(v => v !== valueToRemove).forEach(v => params.append(key, v));
       } else {
-        params.delete(key); // If it's the last one, just delete the key entirely
+        params.delete(key); 
       }
     } else {
       params.delete(key); // Fallback for single-value filters
@@ -212,21 +217,21 @@ function ListingsContent() {
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  // UPDATED: Added the raw 'value' so ActiveFiltersBar can pass it to the remove function
   const activeFiltersPills = Array.from(searchParams.entries())
-    .filter(([key]) => key !== "page" && key !== "limit") // Hide pagination from pills
+    .filter(([key]) => key !== "page" && key !== "limit")
     .map(([key, value]) => ({
       key: key, 
-      value: value, // Pass the raw value down
+      value: value,
       label: value.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
   }));
 
   const formattedListingsForMap = listings.map(item => ({
-    id: item.id,
+    id: item.slug,
     title: item.title,
     price: new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 0 }).format(item.price),
     location: item.location,
     image: item.imageUrl, 
+    status: item.status,
     lat: item.lat,
     lng: item.lng
   }));
@@ -235,7 +240,7 @@ function ListingsContent() {
     <div className="min-h-screen bg-white">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* DESKTOP ONLY: Top Row */}
+
         <div className="hidden lg:flex flex-row items-center justify-between gap-4 mb-8 pb-6 border-b border-gray-100">
           <form onSubmit={handleSearchSubmit} className="flex items-center gap-3 w-full max-w-2xl">
             <div className="relative flex-1">
@@ -355,10 +360,6 @@ function ListingsContent() {
             <div className="hidden lg:block mb-6">
               <ActiveFiltersBar activeFilters={activeFiltersPills} onRemove={removeSpecificFilter} onClearAll={clearAllFilters} />
             </div>
-
-            {/* ========================================================= */}
-            {/* CONDITIONAL VIEW RENDERING                                */}
-            {/* ========================================================= */}
             
             {isLoading ? (
               <div className="flex-1 flex flex-col items-center justify-center py-20">
@@ -378,12 +379,25 @@ function ListingsContent() {
               <>
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                   {listings.map((listing, i) => (
-                    <ListingCard key={listing.id || i} {...listing} />
+                    <ListingCard 
+                     key={i}
+                      id={listing.id}
+                      slug={listing.slug}
+                      title={listing.title}
+                      category={listing.category}
+                      price={listing.price}
+                      location={listing.location}
+                      condition={listing.condition}
+                      imageUrl={listing.imageUrl}
+                      isVerified={listing.isVerified}
+                      status={listing.status}
+                      rating={listing.rating}
+                      reviewsCount={listing.reviewsCount}
+                    />
                   ))}
                 </div>
                 {meta.pages > 1 && (
                   <div className="mt-8">
-                    {/* Ensure your Pagination component reads from searchParams or pass the meta object to it! */}
                     <Pagination />
                   </div>
                 )}
@@ -427,7 +441,6 @@ function ListingsContent() {
                 )}
               </div>
             )}
-            {/* ========================================================= */}
 
           </div>
         </div>

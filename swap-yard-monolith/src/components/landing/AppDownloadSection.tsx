@@ -1,6 +1,7 @@
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import Image from "next/image";
+import Link from "next/link";
 
 export const AppDownloadSection = () => {
     return (
@@ -8,13 +9,17 @@ export const AppDownloadSection = () => {
             <div className="container mx-auto px-6 md:px-10 lg:px-12 xl:px-4 max-w-7xl flex flex-col md:flex-row items-center">
                 <div className="md:w-1/2 mb-10 md:mb-0">
                     <h2 id="app-download-heading" className="text-3xl md:text-5xl font-extrabold text-[#002147] mb-6">List. Chat. Deal. <br/> All on Your Phone</h2>
-                    <p className="text-gray-600 mb-8 max-w-md">Download our mobile app to connect with people in your neighborhood. It&apos;s fast, free, and secure.</p>
-                    <Button variant="primary">Get the App</Button>
+                    <p className="text-gray-600 mb-8 max-w-md">Visit our listings to browse listings and discover items near you. It&apos;s fast, free, and secure.</p>
+                    <Button variant="primary">
+                        
+                        <Link href="/listings" passHref>
+                            Browse Website
+                        </Link>
+                </Button>
                 </div>
 
                 <div className="md:w-1/2 flex justify-center relative">
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-75 h-75 bg-pink-200 rounded-full blur-3xl opacity-50"></div>
-                    {/* Phone Mockup Placeholder */}
                     <div className="relative w-70 h-137.5 bg-white border-8 border-gray-900 rounded-[3rem] shadow-2xl overflow-hidden z-10">
                         <Image 
                             src="https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?w=500" 

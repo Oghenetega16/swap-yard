@@ -1,87 +1,119 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useCallback,
+} from "react";
 
-// 1. Define the shape of a Notification
 export interface AppNotification {
   id: string;
   title: string;
   message: string;
   createdAt: string;
-  isRead: boolean;
+  read: boolean;
   type: "order" | "system" | "alert";
 }
 
-// 2. Define the Context Type
 interface NotificationContextType {
   notifications: AppNotification[];
-  addNotification: (notification: Omit<AppNotification, "id" | "createdAt" | "isRead">) => void;
-  markAsRead: (id: string) => void;
-  markAllAsRead: () => void;
   unreadCount: number;
+  loading: boolean;
+  fetchNotifications: () => Promise<void>;
+  markAsRead: (id: string) => Promise<void>;
 }
 
-const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
+const NotificationContext =
+  createContext<NotificationContextType | null>(null);
 
-// 3. Create the Provider
-export function NotificationProvider({ children }: { children: ReactNode }) {
+export function NotificationProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    setIsMounted(true);
-    const stored = localStorage.getItem("swapyard_notifications");
-    if (stored) {
-      try {
-        setNotifications(JSON.parse(stored));
-      } catch (error) {
-        console.error("Failed to load notifications", error);
-      }
+  const fetchNotifications = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const res = await fetch(
+        "/api/notifications?page=1&limit=20",
+        {
+          credentials: "include",
+        }
+      );
+
+      if (!res.ok) return;
+
+      const data = await res.json();
+
+      setNotifications(data.items);
+      setUnreadCount(data.meta.unreadCount);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    if (isMounted) {
-      localStorage.setItem("swapyard_notifications", JSON.stringify(notifications));
+  const markAsRead = async (id: string) => {
+    try {
+      await fetch(`/api/notifications/${id}`, {
+        method: "PATCH",
+        credentials: "include",
+      });
+
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === id
+            ? {
+                ...n,
+                read: true,
+              }
+            : n
+        )
+      );
+
+      setUnreadCount((prev) =>
+        prev > 0 ? prev - 1 : 0
+      );
+    } catch (error) {
+      console.log(error);
     }
-  }, [notifications, isMounted]);
-
-  // Core Functions
-  const addNotification = (notification: Omit<AppNotification, "id" | "createdAt" | "isRead">) => {
-    const newNotification: AppNotification = {
-      ...notification,
-      id: Math.random().toString(36).substring(2, 9), // Simple ID generation
-      createdAt: new Date().toISOString(),
-      isRead: false,
-    };
-    // Add new notifications to the top of the list
-    setNotifications((prev) => [newNotification, ...prev]);
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((notif) => (notif.id === id ? { ...notif, isRead: true } : notif))
-    );
-  };
-
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((notif) => ({ ...notif, isRead: true })));
-  };
-
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   return (
-    <NotificationContext.Provider value={{ notifications, addNotification, markAsRead, markAllAsRead, unreadCount }}>
+    <NotificationContext.Provider
+      value={{
+        notifications,
+        unreadCount,
+        loading,
+        fetchNotifications,
+        markAsRead,
+      }}
+    >
       {children}
     </NotificationContext.Provider>
   );
 }
 
-// 4. Custom Hook
 export function useNotification() {
   const context = useContext(NotificationContext);
-  if (context === undefined) {
-    throw new Error("useNotification must be used within a NotificationProvider");
-  }
+
+  if (!context)
+    throw new Error(
+      "useNotification must be used within NotificationProvider"
+    );
+
   return context;
 }
