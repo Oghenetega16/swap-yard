@@ -29,13 +29,13 @@ async function getAuthUser(req: Request) {
   });
 }
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getAuthUser(req);
     if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
     const notification = await prisma.notification.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
     });
 
     if (!notification) {
