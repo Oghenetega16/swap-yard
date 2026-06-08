@@ -79,7 +79,6 @@ export default function SignupPage() {
                     email: form.email,
                     password: form.password,
                     phoneNumber: form.phoneNumber,
-                    country: form.country, // Sending country
                     state: form.state,     // Sending state
                     role: role.toUpperCase(),
                     contract: contract, 
@@ -183,26 +182,7 @@ export default function SignupPage() {
 
                     {/* Location Dropdowns (Replaced standalone state field) */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <label htmlFor="country" className="text-sm font-medium text-gray-700">
-                                Country
-                            </label>
-                            <select
-                                id="country"
-                                value={selectedCountry}
-                                disabled={geoLoading}
-                                onChange={(e) => setSelectedCountry(e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-3 text-sm focus:border-[#EB3B18] focus:ring-1 focus:ring-[#EB3B18] outline-none transition-colors appearance-none bg-white cursor-pointer disabled:opacity-60"
-                            >
-                                {geoLoading ? (
-                                    <option>Loading...</option>
-                                ) : (
-                                    countries.map((country, idx) => (
-                                        <option key={`${country}-${idx}`} value={country}>{country}</option>
-                                    ))
-                                )}
-                            </select>
-                        </div>
+                       
                         
                         <div className="space-y-1.5">
                             <label htmlFor="state" className="text-sm font-medium text-gray-700">
