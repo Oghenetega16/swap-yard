@@ -2,12 +2,11 @@
 
 import { useState, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Search, LayoutGrid, Map as MapIcon, ChevronDown, ShieldCheck, Filter, Heart, MapPin, Star, Loader2 } from "lucide-react";
+import { Search, LayoutGrid, Map as MapIcon, ChevronDown, ShieldCheck, Filter, Heart, MapPin, Star, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import FilterSidebar from "@/components/buyer/listings/FilterSidebar";
 import ActiveFiltersBar from "@/components/buyer/listings/ActiveFiltersBar";
 import ListingCard from "@/components/buyer/listings/ListingCard";
 import ValuePropsSection from "@/components/buyer/listings/ValuePropsSection";
-import Pagination from "@/components/buyer/listings/Pagination";
 import Image from "next/image";
 import Link from "next/link";
 import { ListingsMap } from "@/components/buyer/listings/ListingMap";
@@ -93,6 +92,59 @@ const AreaListingCardDesktop = ({ item }: { item: any }) => {
   );
 };
 
+// Self-contained pagination control driven entirely by the URL's "page" param.
+// This replaces the old bare <Pagination /> import, which rendered with no props
+// and therefore had no way to know the current page, total pages, or how to
+// notify the parent of a click — that's why the page number never moved.
+const PaginationControl = ({
+  currentPage,
+  totalPages,
+  onPageChange,
+}: {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) => {
+  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+
+  return (
+    <div className="flex items-center justify-center gap-2">
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage <= 1}
+        aria-label="Previous page"
+        className="p-2 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+
+      {pages.map((p) => (
+        <button
+          key={p}
+          onClick={() => onPageChange(p)}
+          aria-current={p === currentPage ? "page" : undefined}
+          className={`min-w-[2.25rem] h-9 px-2 rounded-md text-sm font-bold transition-colors cursor-pointer ${
+            p === currentPage
+              ? "bg-[#EB3B18] text-white"
+              : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          {p}
+        </button>
+      ))}
+
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage >= totalPages}
+        aria-label="Next page"
+        className="p-2 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+      >
+        <ChevronRight className="w-4 h-4" />
+      </button>
+    </div>
+  );
+};
+
 function ListingsContent() {
   const router = useRouter();
   const pathname = usePathname();
@@ -100,69 +152,74 @@ function ListingsContent() {
 
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
-  
+
   const [listings, setListings] = useState<any[]>([]);
   const [meta, setMeta] = useState({ total: 0, page: 1, pages: 1 });
   const [isLoading, setIsLoading] = useState(true);
 
-useEffect(() => {
-  const fetchListings = async () => {
-    setIsLoading(true);
-    try {
-      const queryString = searchParams.toString();
-      const res = await fetch(`/api/listing?${queryString}`);
-      const alldata = await res.json();
+  // How many map-view items are currently visible; grows when "Load More" is clicked.
+  const [mapVisibleCount, setMapVisibleCount] = useState(4);
 
-      const filteredItems = alldata.items.filter(
-        (item: any) => item.status !== "SOLD"
-      );
+  useEffect(() => {
+    const fetchListings = async () => {
+      setIsLoading(true);
+      try {
+        const queryString = searchParams.toString();
+        const res = await fetch(`/api/listing?${queryString}`);
+        const alldata = await res.json();
 
-      const mappedData = filteredItems.map((item: any, index: number) => {
-        const dummyCoords = [
-          { lat: 6.5568, lng: 3.3852 },
-          { lat: 6.5244, lng: 3.3792 },
-          { lat: 6.4531, lng: 3.3958 },
-          { lat: 6.6018, lng: 3.3515 },
-        ];
+        const filteredItems = alldata.items.filter(
+          (item: any) => item.status !== "SOLD"
+        );
 
-        return {
-          id: item.id,
-          slug: item.slug,
-          title: item.name,
-          category: item.category?.name || "Uncategorized",
-          price: item.price,
-          location: item.location || "Location not specified",
-          condition: item.condition || "Used",
-          imageUrl:
-            item.images && item.images.length > 0
-              ? item.images[0].url
-              : "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?q=80&w=500&auto=format&fit=crop",
-          isVerified: true,
-          rating: 4.8,
-          reviewsCount: 12,
-          status: item.status,
-          lat: dummyCoords[index % dummyCoords.length].lat,
-          lng: dummyCoords[index % dummyCoords.length].lng,
-        };
-      });
+        const mappedData = filteredItems.map((item: any, index: number) => {
+          const dummyCoords = [
+            { lat: 6.5568, lng: 3.3852 },
+            { lat: 6.5244, lng: 3.3792 },
+            { lat: 6.4531, lng: 3.3958 },
+            { lat: 6.6018, lng: 3.3515 },
+          ];
 
-      setListings(mappedData);
+          return {
+            id: item.id,
+            slug: item.slug,
+            title: item.name,
+            category: item.category?.name || "Uncategorized",
+            price: item.price,
+            location: item.location || "Location not specified",
+            condition: item.condition || "Used",
+            imageUrl:
+              item.images && item.images.length > 0
+                ? item.images[0].url
+                : "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?q=80&w=500&auto=format&fit=crop",
+            isVerified: true,
+            rating: 4.8,
+            reviewsCount: 12,
+            status: item.status,
+            lat: dummyCoords[index % dummyCoords.length].lat,
+            lng: dummyCoords[index % dummyCoords.length].lng,
+          };
+        });
 
-      setMeta({
-        ...alldata.meta,
-        total: filteredItems.length, 
-      });
-    } catch (error) {
-      console.error("Error fetching listings:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        setListings(mappedData);
 
-  fetchListings();
-}, [searchParams]);
+        setMeta({
+          ...alldata.meta,
+          total: filteredItems.length,
+        });
 
+        // Reset the map "load more" window whenever the underlying data changes
+        // (new filters/page), so we don't carry over a stale count.
+        setMapVisibleCount(4);
+      } catch (error) {
+        console.error("Error fetching listings:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
+    fetchListings();
+  }, [searchParams]);
 
   const handleSearchSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -196,10 +253,8 @@ useEffect(() => {
     router.push(pathname);
   };
 
-
   const removeSpecificFilter = (key: string, valueToRemove?: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    
 
     if (valueToRemove) {
       const currentValues = params.getAll(key);
@@ -207,7 +262,7 @@ useEffect(() => {
         params.delete(key);
         currentValues.filter(v => v !== valueToRemove).forEach(v => params.append(key, v));
       } else {
-        params.delete(key); 
+        params.delete(key);
       }
     } else {
       params.delete(key); // Fallback for single-value filters
@@ -217,10 +272,25 @@ useEffect(() => {
     router.push(`${pathname}?${params.toString()}`);
   };
 
+  // Handles clicks from PaginationControl. Writes the new page directly into
+  // the URL's "page" param (bypassing updateFilters' page-reset rule).
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > meta.pages || page === meta.page) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(page));
+    router.push(`${pathname}?${params.toString()}`);
+    // Optional: scroll back to the top of the results when paging.
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleLoadMoreMapItems = () => {
+    setMapVisibleCount((count) => Math.min(count + 4, listings.length));
+  };
+
   const activeFiltersPills = Array.from(searchParams.entries())
     .filter(([key]) => key !== "page" && key !== "limit")
     .map(([key, value]) => ({
-      key: key, 
+      key: key,
       value: value,
       label: value.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
   }));
@@ -230,7 +300,7 @@ useEffect(() => {
     title: item.title,
     price: new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 0 }).format(item.price),
     location: item.location,
-    image: item.imageUrl, 
+    image: item.imageUrl,
     status: item.status,
     lat: item.lat,
     lng: item.lng
@@ -239,17 +309,17 @@ useEffect(() => {
   return (
     <div className="min-h-screen bg-white">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+
 
         <div className="hidden lg:flex flex-row items-center justify-between gap-4 mb-8 pb-6 border-b border-gray-100">
           <form onSubmit={handleSearchSubmit} className="flex items-center gap-3 w-full max-w-2xl">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" aria-hidden="true" />
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search for furniture, electronics, appliances..." 
+                placeholder="Search for furniture, electronics, appliances..."
                 aria-label="Search for items"
                 className="w-full pl-11 pr-4 py-3 placeholder:text-sm bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#002147] shadow-sm"
               />
@@ -261,14 +331,14 @@ useEffect(() => {
 
           <div className="flex items-center gap-4 shrink-0">
             <div className="flex items-center gap-2">
-              <button 
+              <button
                 onClick={() => setViewMode("grid")}
                 aria-label="Grid view"
                 className={`p-2 rounded-md shadow-sm cursor-pointer transition-colors ${viewMode === "grid" ? "bg-[#EB3B18] text-white" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"}`}
               >
                 <LayoutGrid className="w-5 h-5" aria-hidden="true" />
               </button>
-              <button 
+              <button
                 onClick={() => setViewMode("map")}
                 aria-label="Map view"
                 className={`p-2 rounded-md shadow-sm cursor-pointer transition-colors ${viewMode === "map" ? "bg-[#EB3B18] text-white" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"}`}
@@ -289,21 +359,21 @@ useEffect(() => {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          
+
           <div className="hidden lg:block w-64 shrink-0">
              <FilterSidebar currentFilters={searchParams} onFilterChange={updateFilters} />
           </div>
 
           <div className="flex-1 min-w-0 flex flex-col">
-            
+
             <div className="w-full flex flex-col lg:hidden">
               <form onSubmit={handleSearchSubmit} className="relative w-full mb-4">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" aria-hidden="true" />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Search for furniture, electronics..." 
+                  placeholder="Search for furniture, electronics..."
                   aria-label="Search for items"
                   className="w-full pl-10 pr-12 py-3 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#002147] shadow-sm"
                 />
@@ -324,14 +394,14 @@ useEffect(() => {
                   </button>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button 
+                  <button
                     onClick={() => setViewMode("grid")}
                     aria-label="Grid view"
                     className={`p-1.5 rounded-md shadow-sm cursor-pointer transition-colors ${viewMode === "grid" ? "bg-[#EB3B18] text-white" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"}`}
                   >
                     <LayoutGrid className="w-4 h-4" aria-hidden="true" />
                   </button>
-                  <button 
+                  <button
                     onClick={() => setViewMode("map")}
                     aria-label="Map view"
                     className={`p-1.5 rounded-md shadow-sm cursor-pointer transition-colors ${viewMode === "map" ? "bg-[#EB3B18] text-white" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"}`}
@@ -360,7 +430,7 @@ useEffect(() => {
             <div className="hidden lg:block mb-6">
               <ActiveFiltersBar activeFilters={activeFiltersPills} onRemove={removeSpecificFilter} onClearAll={clearAllFilters} />
             </div>
-            
+
             {isLoading ? (
               <div className="flex-1 flex flex-col items-center justify-center py-20">
                 <Loader2 className="w-10 h-10 text-[#EB3B18] animate-spin mb-4" />
@@ -379,7 +449,7 @@ useEffect(() => {
               <>
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                   {listings.map((listing, i) => (
-                    <ListingCard 
+                    <ListingCard
                      key={i}
                       id={listing.id}
                       slug={listing.slug}
@@ -398,7 +468,11 @@ useEffect(() => {
                 </div>
                 {meta.pages > 1 && (
                   <div className="mt-8">
-                    <Pagination />
+                    <PaginationControl
+                      currentPage={meta.page}
+                      totalPages={meta.pages}
+                      onPageChange={handlePageChange}
+                    />
                   </div>
                 )}
               </>
@@ -416,26 +490,29 @@ useEffect(() => {
                 <div className="mb-6">
                   <h2 className="text-xl font-extrabold text-gray-900 mb-1">Items in this area</h2>
                   <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">
-                    Showing {listings.length} items found
+                    Showing {Math.min(mapVisibleCount, listings.length)} of {listings.length} items found
                   </p>
                 </div>
 
                 <div className="flex flex-col md:hidden">
-                  {listings.slice(0, 4).map((listing, i) => (
+                  {listings.slice(0, mapVisibleCount).map((listing, i) => (
                     <HorizontalListingCard key={listing.id || i} item={listing} />
                   ))}
                 </div>
 
                 <div className="hidden md:grid grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-8">
-                  {listings.slice(0, 4).map((listing, i) => (
+                  {listings.slice(0, mapVisibleCount).map((listing, i) => (
                     <AreaListingCardDesktop key={listing.id || i} item={listing} />
                   ))}
                 </div>
 
-                {listings.length > 4 && (
+                {listings.length > mapVisibleCount && (
                   <div className="mt-10 flex justify-center">
-                    <button className="px-8 py-3 bg-white border border-gray-200 text-sm font-bold text-gray-700 rounded-full hover:bg-gray-50 shadow-sm transition-colors">
-                      Load More Items 
+                    <button
+                      onClick={handleLoadMoreMapItems}
+                      className="px-8 py-3 bg-white border border-gray-200 text-sm font-bold text-gray-700 rounded-full hover:bg-gray-50 shadow-sm transition-colors cursor-pointer"
+                    >
+                      Load More Items
                     </button>
                   </div>
                 )}

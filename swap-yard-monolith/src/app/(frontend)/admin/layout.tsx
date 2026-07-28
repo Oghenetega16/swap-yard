@@ -15,9 +15,8 @@ const navigation = [
   { name: "Orders", href: "/admin/orders", icon: ShoppingBag },
   { name: "Reports & Complaints", href: "/admin/reports", icon: ShieldAlert },
   { name: "Transactions", href: "/admin/transactions", icon: ArrowLeftRight },
-  { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { name: "Payouts", href: "/admin/payouts", icon: CreditCard },
-  { name: "Settings", href: "/admin/settings", icon: Settings },
+  // { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -49,7 +48,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </header>
 
-      {/* BODY WRAPPER */}
       <div className="flex pt-16 flex-1">
         {/* SIDEBAR */}
         <aside className="w-64 bg-white border-r border-slate-100 fixed left-0 bottom-0 top-16 hidden md:flex flex-col justify-between p-4">
