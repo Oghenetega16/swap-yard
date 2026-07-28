@@ -18,7 +18,7 @@ async function getCookie(req: Request, name: string) {
   );
 }
 
-async function getAuthenticatedUser(req: Request) {
+async function getAuthenticatedAdmin(req: Request) {
   const token = await getCookie(req, "session");
 
   if (!token) {
@@ -52,23 +52,25 @@ async function getAuthenticatedUser(req: Request) {
       error: NextResponse.json({ message: "User does not exist" }, { status: 404 }),
     };
   }
+  
+  if (user.role !== "ADMIN") {
+    return {
+      error: NextResponse.json({ message: "Forbidden" }, { status: 403 }),
+    };
+  }
 
   return { user };
 }
 
-
 export async function GET(req: Request) {
   try {
-    const auth = await getAuthenticatedUser(req);
+    const auth = await getAuthenticatedAdmin(req);
     if ("error" in auth) return auth.error;
-
-    const { user } = auth;
 
     const { searchParams } = new URL(req.url);
 
     const rawQuery = {
       status: searchParams.get("status") ?? undefined,
-      scope: searchParams.get("scope") ?? undefined,
       page: searchParams.get("page") ?? undefined,
       limit: searchParams.get("limit") ?? undefined,
     };
@@ -85,20 +87,12 @@ export async function GET(req: Request) {
       );
     }
 
-    const { status, scope, page, limit } = validatedQuery.data;
+    const { status, page, limit } = validatedQuery.data;
     const skip = (page - 1) * limit;
 
+    // No buyerId / sellerId filter here on purpose — admin sees every order.
     const where: Prisma.OrderWhereInput = {
       ...(status ? { status } : {}),
-      ...(scope === "buyer"
-        ? { buyerId: user.id }
-        : {
-            items: {
-              some: {
-                sellerId: user.id,
-              },
-            },
-          }),
     };
 
     const [orders, total] = await Promise.all([
@@ -159,13 +153,12 @@ export async function GET(req: Request) {
           page,
           limit,
           pages: Math.ceil(total / limit),
-          scope,
         },
       },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error fetching orders:", error);
+    console.error("Error fetching admin orders:", error);
     return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }
