@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { 
   LayoutGrid, Users, ShieldAlert, ShoppingBag, 
   ArrowLeftRight, BarChart3, CreditCard, Settings, LogOut, Bell
 } from "lucide-react";
+import Logo from "@/components/ui/Logo";
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutGrid },
@@ -43,8 +44,10 @@ function getInitials(firstname?: string, lastname?: string, email?: string) {
 
 export default function AdminLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,6 +77,18 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
     };
   }, []);
 
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    } catch (err) {
+      console.error("Logout request failed:", err);
+    } finally {
+      router.push("/auth/login");
+      router.refresh();
+    }
+  }
+
   const displayName = isLoading
     ? "Loading..."
     : user
@@ -88,9 +103,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
       {/* HEADER */}
       <header className="bg-white border-b border-slate-100 h-16 fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6">
         <div className="flex items-center gap-2">
-          {/* Mock Logo Graphic */}
-          <div className="w-8 h-8 bg-[#E11D48] rounded-lg flex items-center justify-center text-white font-bold text-xs">SY</div>
-          <span className="font-bold text-xl tracking-tight text-slate-900">SwapYard</span>
+          <Logo forceBlackTheme />
         </div>
         
         <div className="flex items-center gap-4">
@@ -137,13 +150,20 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
             </nav>
           </div>
 
-          <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition w-full">
-            <LogOut size={18} />
-            Log out
+          <button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition w-full disabled:opacity-50 cursor-pointer"
+          >
+            {isLoggingOut ? (
+              <div className="w-[18px] h-[18px] border-2 border-rose-600 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <LogOut size={18} />
+            )}
+            {isLoggingOut ? "Logging out..." : "Log out"}
           </button>
         </aside>
 
-        {/* PAGE CONTENT CONTAINER */}
         <main className="flex-1 md:pl-64 min-w-0 bg-[#F4F6F9]">
           <div className="p-6 max-w-[1600px] mx-auto space-y-6">
             {children}
