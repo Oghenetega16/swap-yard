@@ -79,7 +79,7 @@ export function useAdminOrders() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/orders?limit=100", {
+      const res = await fetch("/api/orders", {
         credentials: "include",
       });
       const data = await res.json();
@@ -105,7 +105,7 @@ export function useAdminOrders() {
       setIsUpdating(rawOrderId);
       setError(null);
       try {
-        const res = await fetch(`/api/admin/orders/${rawOrderId}`, {
+        const res = await fetch(`/api/orders/${rawOrderId}`, {
           method: "PATCH",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
