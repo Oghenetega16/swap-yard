@@ -371,8 +371,8 @@ model Report {
   listingId   String
   listing     Listing  @relation(fields: [listingId], references: [id])
   type        String
-  reason      String
-  comment     String?
+  reason      String  @db.LongText
+  comment     String? @db.LongText
   imageUrl1  String?
   imagePublicId1 String?
   imageUrl2  String?
