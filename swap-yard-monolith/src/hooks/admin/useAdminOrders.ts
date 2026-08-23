@@ -184,10 +184,7 @@ export function useAdminOrders() {
   }, [rawOrders, searchQuery, sortBy]);
 
   const formatPrice = useCallback((price: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(price / 100);
+    return price / 1;
   }, []);
 
   return {

@@ -51,9 +51,17 @@ function groupByOrder(rows: AdminOrderRow[]): GroupedRow[] {
     return result;
 }
 
+interface PendingUpdate {
+    rawOrderId: string;
+    displayOrderId: string;
+    itemCount: number;
+    newStatus: string;
+}
+
 export default function AdminOrders() {
     const { state, setters, handlers, helpers } = useAdminOrders();
     const [pendingStatus, setPendingStatus] = useState<Record<string, string>>({});
+    const [confirmUpdate, setConfirmUpdate] = useState<PendingUpdate | null>(null);
 
     const groupedOrders = useMemo(() => groupByOrder(state.orders), [state.orders]);
 
@@ -96,15 +104,22 @@ export default function AdminOrders() {
         const itemCount = orderItemCounts[order.rawOrderId] ?? 1;
 
         if (itemCount > 1) {
-            const confirmed = window.confirm(
-                `This order (${order.displayOrderId}) has ${itemCount} items. ` +
-                `Updating the status will apply to all ${itemCount} items in this order, ` +
-                `not just "${order.itemName}". Continue?`
-            );
-            if (!confirmed) return;
+            setConfirmUpdate({
+                rawOrderId: order.rawOrderId,
+                displayOrderId: order.displayOrderId,
+                itemCount,
+                newStatus: selected,
+            });
+            return;
         }
 
         handlers.updateOrderStatus(order.rawOrderId, selected as any);
+    };
+
+    const confirmPendingUpdate = () => {
+        if (!confirmUpdate) return;
+        handlers.updateOrderStatus(confirmUpdate.rawOrderId, confirmUpdate.newStatus as any);
+        setConfirmUpdate(null);
     };
 
     if (state.isLoading) {
@@ -262,6 +277,40 @@ export default function AdminOrders() {
                     </tbody>
                 </table>
             </div>
+
+            {confirmUpdate && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+                    role="dialog"
+                    aria-modal="true"
+                    onClick={() => setConfirmUpdate(null)}
+                >
+                    <div
+                        className="bg-white rounded-xl shadow-lg border border-gray-100 w-full max-w-sm p-6"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <p className="text-sm text-gray-800">
+                            Update all <span className="font-bold">{confirmUpdate.itemCount} items</span> in order{" "}
+                            <span className="font-mono text-xs">{confirmUpdate.displayOrderId}</span>?
+                        </p>
+
+                        <div className="flex justify-end gap-2 mt-5">
+                            <button
+                                onClick={() => setConfirmUpdate(null)}
+                                className="px-4 py-2 rounded-md text-xs font-bold text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmPendingUpdate}
+                                className="px-4 py-2 rounded-md text-xs font-bold bg-[#002147] hover:bg-[#001733] text-white transition-colors cursor-pointer"
+                            >
+                                Update
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
