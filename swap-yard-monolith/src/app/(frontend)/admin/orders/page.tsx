@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Search, ChevronDown, Save } from "lucide-react";
-import { useAdminOrders } from "@/hooks/admin/useAdminOrders";
+import { useAdminOrders, AdminOrderRow } from "@/hooks/admin/useAdminOrders";
 
 const ALL_STATUSES = [
     "PENDING_PAYMENT",
@@ -17,9 +17,55 @@ const ALL_STATUSES = [
     "DISPUTED",
 ] as const;
 
+interface GroupedRow extends AdminOrderRow {
+    isGroupStart: boolean;
+    groupSize: number;
+    groupIndex: number;
+}
+
+// Rows arrive already grouped by order (items of the same order are
+// adjacent). This walks the list once and tags each row with whether it
+// starts a new order group, how many items are in that group (for
+// rowSpan), and an alternating groupIndex for zebra striping.
+function groupByOrder(rows: AdminOrderRow[]): GroupedRow[] {
+    const result: GroupedRow[] = [];
+    let groupIndex = -1;
+
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const isGroupStart = i === 0 || rows[i - 1].rawOrderId !== row.rawOrderId;
+        if (isGroupStart) groupIndex++;
+
+        let groupSize = 1;
+        if (isGroupStart) {
+            let j = i + 1;
+            while (j < rows.length && rows[j].rawOrderId === row.rawOrderId) {
+                groupSize++;
+                j++;
+            }
+        }
+
+        result.push({ ...row, isGroupStart, groupSize, groupIndex });
+    }
+
+    return result;
+}
+
 export default function AdminOrders() {
     const { state, setters, handlers, helpers } = useAdminOrders();
     const [pendingStatus, setPendingStatus] = useState<Record<string, string>>({});
+
+    const groupedOrders = useMemo(() => groupByOrder(state.orders), [state.orders]);
+
+    // How many item-rows belong to each order, used to decide whether an
+    // update needs the multi-item confirmation.
+    const orderItemCounts = useMemo(() => {
+        const counts: Record<string, number> = {};
+        for (const row of state.orders) {
+            counts[row.rawOrderId] = (counts[row.rawOrderId] ?? 0) + 1;
+        }
+        return counts;
+    }, [state.orders]);
 
     const getStatusStyle = (status: string) => {
         switch (status) {
@@ -45,6 +91,21 @@ export default function AdminOrders() {
 
     const formatStatusText = (status: string) =>
         status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
+
+    const handleUpdateClick = (order: GroupedRow, selected: string) => {
+        const itemCount = orderItemCounts[order.rawOrderId] ?? 1;
+
+        if (itemCount > 1) {
+            const confirmed = window.confirm(
+                `This order (${order.displayOrderId}) has ${itemCount} items. ` +
+                `Updating the status will apply to all ${itemCount} items in this order, ` +
+                `not just "${order.itemName}". Continue?`
+            );
+            if (!confirmed) return;
+        }
+
+        handlers.updateOrderStatus(order.rawOrderId, selected as any);
+    };
 
     if (state.isLoading) {
         return (
@@ -109,22 +170,46 @@ export default function AdminOrders() {
                         </tr>
                     </thead>
                     <tbody className="text-sm text-gray-800">
-                        {state.orders.length === 0 ? (
+                        {groupedOrders.length === 0 ? (
                             <tr>
                                 <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                                     No orders found matching your search.
                                 </td>
                             </tr>
                         ) : (
-                            state.orders.map((order) => {
+                            groupedOrders.map((order) => {
                                 const isUpdating = state.isUpdating === order.rawOrderId;
-                                const selected = pendingStatus[order.rawOrderId] ?? order.status;
+                                const selected = pendingStatus[order.id] ?? order.status;
                                 const hasChange = selected !== order.status;
+                                const rowBg = order.groupIndex % 2 === 1 ? "bg-gray-50/60" : "";
 
                                 return (
-                                    <tr key={order.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                                        <td className="px-4 py-5 font-mono text-xs text-gray-500">{order.displayOrderId}</td>
-                                        <td className="px-4 py-5 font-medium">{order.buyerName}</td>
+                                    <tr
+                                        key={order.id}
+                                        className={`border-b border-gray-100 hover:bg-gray-100/70 transition-colors ${rowBg} ${order.isGroupStart ? "border-t-2 border-t-gray-200" : ""
+                                            }`}
+                                    >
+                                        {order.isGroupStart && (
+                                            <>
+                                                <td
+                                                    rowSpan={order.groupSize}
+                                                    className="px-4 py-5 font-mono text-xs text-gray-500 align-top border-r border-gray-100"
+                                                >
+                                                    {order.displayOrderId}
+                                                    {order.groupSize > 1 && (
+                                                        <span className="block mt-1 text-[10px] font-sans font-semibold text-[#002147] bg-blue-50 border border-blue-100 rounded px-1.5 py-0.5 w-fit">
+                                                            {order.groupSize} items
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td
+                                                    rowSpan={order.groupSize}
+                                                    className="px-4 py-5 font-medium align-top border-r border-gray-100"
+                                                >
+                                                    {order.buyerName}
+                                                </td>
+                                            </>
+                                        )}
                                         <td className="px-4 py-5 font-medium">{order.sellerName}</td>
                                         <td className="px-4 py-5">{order.itemName}</td>
                                         <td className="px-4 py-5 capitalize">{order.condition.toLowerCase()}</td>
@@ -142,7 +227,7 @@ export default function AdminOrders() {
                                                         onChange={(e) =>
                                                             setPendingStatus((prev) => ({
                                                                 ...prev,
-                                                                [order.rawOrderId]: e.target.value,
+                                                                [order.id]: e.target.value,
                                                             }))
                                                         }
                                                         disabled={isUpdating}
@@ -157,7 +242,7 @@ export default function AdminOrders() {
                                                     <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
                                                 </div>
                                                 <button
-                                                    onClick={() => handlers.updateOrderStatus(order.rawOrderId, selected as any)}
+                                                    onClick={() => handleUpdateClick(order, selected)}
                                                     disabled={isUpdating || !hasChange}
                                                     className="inline-flex items-center gap-1.5 bg-[#002147] hover:bg-[#001733] text-white px-3 py-1.5 rounded-md text-xs font-bold transition-colors disabled:opacity-40 cursor-pointer"
                                                 >
