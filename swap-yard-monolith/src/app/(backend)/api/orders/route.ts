@@ -115,6 +115,7 @@ export async function GET(req: Request) {
                   name: true,
                   price: true,
                   status: true,
+                  condition: true,
                   images: {
                     select: {
                       id: true,

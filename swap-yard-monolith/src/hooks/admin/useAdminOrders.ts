@@ -16,15 +16,26 @@ export type OrderStatus =
 
 type SortOption = "Newest" | "Oldest";
 
+interface RawOrderItem {
+  id: string;
+  price?: number | null;
+  quantity?: number | null;
+  listing?: {
+    id: string;
+    name?: string;
+    price?: number;
+    condition?: string;
+    status?: string;
+  } | null;
+  seller?: { id: string; firstname?: string; lastname?: string } | null;
+}
+
 interface RawOrder {
   id: string;
-  price: number;
-  condition: string;
   status: OrderStatus;
   createdAt: string;
   buyer?: { id: string; firstname?: string; lastname?: string } | null;
-  seller?: { id: string; firstname?: string; lastname?: string } | null;
-  listing?: { id: string; name?: string } | null;
+  items: RawOrderItem[];
 }
 
 export interface AdminOrderRow {
@@ -45,19 +56,42 @@ function fullName(p?: { firstname?: string; lastname?: string } | null) {
   return [p.firstname, p.lastname].filter(Boolean).join(" ").trim() || "—";
 }
 
-function mapOrder(o: RawOrder): AdminOrderRow {
-  return {
-    id: o.id,
+// Orders are multi-item (multi-seller carts), so each order is expanded
+// into one row per item. The order-level status/id drive updates; the
+// item-level fields (seller, listing, price, condition) are per-row.
+function mapOrderToRows(o: RawOrder): AdminOrderRow[] {
+  const displayOrderId = o.id.slice(0, 8).toUpperCase();
+  const buyerName = fullName(o.buyer);
+
+  if (!o.items || o.items.length === 0) {
+    return [
+      {
+        id: o.id,
+        rawOrderId: o.id,
+        displayOrderId,
+        buyerName,
+        sellerName: "—",
+        itemName: "—",
+        condition: "—",
+        price: 0,
+        status: o.status,
+        createdAt: o.createdAt,
+      },
+    ];
+  }
+
+  return o.items.map((item) => ({
+    id: `${o.id}-${item.id}`,
     rawOrderId: o.id,
-    displayOrderId: o.id.slice(0, 8).toUpperCase(),
-    buyerName: fullName(o.buyer),
-    sellerName: fullName(o.seller),
-    itemName: o.listing?.name ?? "—",
-    condition: o.condition ?? "—",
-    price: o.price,
+    displayOrderId,
+    buyerName,
+    sellerName: fullName(item.seller),
+    itemName: item.listing?.name ?? "—",
+    condition: item.listing?.condition ?? "—",
+    price: item.price ?? item.listing?.price ?? 0,
     status: o.status,
     createdAt: o.createdAt,
-  };
+  }));
 }
 
 export function useAdminOrders() {
@@ -113,6 +147,9 @@ export function useAdminOrders() {
         setRawOrders((prev) =>
           prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
         );
+        // Note: since the table shows one row per item, this single update
+        // covers every row sharing this rawOrderId (they all read o.status
+        // from the same parent order).
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to update order");
       } finally {
@@ -123,7 +160,7 @@ export function useAdminOrders() {
   );
 
   const orders = useMemo(() => {
-    let mapped = rawOrders.map(mapOrder);
+    let mapped = rawOrders.flatMap(mapOrderToRows);
 
     const q = searchQuery.trim().toLowerCase();
     if (q) {
