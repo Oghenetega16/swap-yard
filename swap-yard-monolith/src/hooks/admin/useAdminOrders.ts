@@ -2,33 +2,41 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-export type ReportStatus = "OPEN" | "UNDER_REVIEW" | "RESOLVED" | "REJECTED";
+export type OrderStatus =
+  | "PENDING_PAYMENT"
+  | "PROCESSING"
+  | "PAID"
+  | "SHIPPED"
+  | "DELIVERED"
+  | "BUYER_CONFIRMED"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "REFUNDED"
+  | "DISPUTED";
 
-interface RawReport {
+type SortOption = "Newest" | "Oldest";
+
+interface RawOrder {
   id: string;
-  reporterId: string;
-  listingId: string;
-  type: string;
-  reason: string;
-  comment: string | null;
-  imageUrl1: string | null;
-  imageUrl2: string | null;
-  status: ReportStatus;
+  price: number;
+  condition: string;
+  status: OrderStatus;
   createdAt: string;
-  reporter?: { id: string; firstname?: string; lastname?: string } | null;
-  listing?: { id: string; name?: string; slug?: string } | null;
+  buyer?: { id: string; firstname?: string; lastname?: string } | null;
+  seller?: { id: string; firstname?: string; lastname?: string } | null;
+  listing?: { id: string; name?: string } | null;
 }
 
-export interface AdminReportRow {
+export interface AdminOrderRow {
   id: string;
-  reporterName: string;
-  listingName: string;
-  listingSlug: string;
-  type: string;
-  reason: string;
-  comment: string | null;
-  images: string[];
-  status: ReportStatus;
+  rawOrderId: string;
+  displayOrderId: string;
+  buyerName: string;
+  sellerName: string;
+  itemName: string;
+  condition: string;
+  price: number;
+  status: OrderStatus;
   createdAt: string;
 }
 
@@ -37,67 +45,60 @@ function fullName(p?: { firstname?: string; lastname?: string } | null) {
   return [p.firstname, p.lastname].filter(Boolean).join(" ").trim() || "—";
 }
 
-function mapReport(r: RawReport): AdminReportRow {
+function mapOrder(o: RawOrder): AdminOrderRow {
   return {
-    id: r.id,
-    reporterName: fullName(r.reporter),
-    listingName: r.listing?.name ?? "—",
-    listingSlug: r.listing?.slug ?? "",
-    type: r.type,
-    reason: r.reason,
-    comment: r.comment,
-    images: [r.imageUrl1, r.imageUrl2].filter(Boolean) as string[],
-    status: r.status,
-    createdAt: r.createdAt,
+    id: o.id,
+    rawOrderId: o.id,
+    displayOrderId: o.id.slice(0, 8).toUpperCase(),
+    buyerName: fullName(o.buyer),
+    sellerName: fullName(o.seller),
+    itemName: o.listing?.name ?? "—",
+    condition: o.condition ?? "—",
+    price: o.price,
+    status: o.status,
+    createdAt: o.createdAt,
   };
 }
 
-export function useAdminReports() {
-  const [rawReports, setRawReports] = useState<RawReport[]>([]);
+export function useAdminOrders() {
+  const [rawOrders, setRawOrders] = useState<RawOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ReportStatus | "ALL">("ALL");
+  const [sortBy, setSortBy] = useState<SortOption>("Newest");
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
-  const [selectedReport, setSelectedReport] = useState<AdminReportRow | null>(null);
-  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
-  const [detailError, setDetailError] = useState<string | null>(null);
-
-  const fetchReports = useCallback(async () => {
+  const fetchOrders = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ limit: "50" });
-      if (statusFilter !== "ALL") params.set("status", statusFilter);
-
-      const res = await fetch(`/api/reports?${params.toString()}`, {
+      const res = await fetch(`/api/orders?limit=50`, {
         credentials: "include",
       });
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data?.message ?? "Failed to load reports");
+        throw new Error(data?.message ?? "Failed to load orders");
       }
 
-      setRawReports(data.items ?? []);
+      setRawOrders(data.items ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load reports");
+      setError(err instanceof Error ? err.message : "Failed to load orders");
     } finally {
       setIsLoading(false);
     }
-  }, [statusFilter]);
+  }, []);
 
   useEffect(() => {
-    fetchReports();
-  }, [fetchReports]);
+    fetchOrders();
+  }, [fetchOrders]);
 
-  const updateReportStatus = useCallback(
-    async (reportId: string, newStatus: ReportStatus) => {
-      setIsUpdating(reportId);
+  const updateOrderStatus = useCallback(
+    async (orderId: string, newStatus: OrderStatus) => {
+      setIsUpdating(orderId);
       setError(null);
       try {
-        const res = await fetch(`/api/reports/${reportId}`, {
+        const res = await fetch(`/api/orders/${orderId}`, {
           method: "PATCH",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -106,18 +107,14 @@ export function useAdminReports() {
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data?.message ?? "Failed to update report");
+          throw new Error(data?.message ?? "Failed to update order");
         }
 
-        setRawReports((prev) =>
-          prev.map((r) => (r.id === reportId ? { ...r, status: newStatus } : r))
-        );
-
-        setSelectedReport((prev) =>
-          prev && prev.id === reportId ? { ...prev, status: newStatus } : prev
+        setRawOrders((prev) =>
+          prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
         );
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to update report");
+        setError(err instanceof Error ? err.message : "Failed to update order");
       } finally {
         setIsUpdating(null);
       }
@@ -125,61 +122,48 @@ export function useAdminReports() {
     []
   );
 
-  const viewReport = useCallback(async (reportId: string) => {
-    setIsLoadingDetail(true);
-    setDetailError(null);
-    try {
-      const res = await fetch(`/api/reports/${reportId}`, {
-        credentials: "include",
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data?.message ?? "Failed to load report");
-      }
-
-      setSelectedReport(mapReport(data.report));
-    } catch (err) {
-      setDetailError(err instanceof Error ? err.message : "Failed to load report");
-    } finally {
-      setIsLoadingDetail(false);
-    }
-  }, []);
-
-  const closeReport = useCallback(() => {
-    setSelectedReport(null);
-    setDetailError(null);
-  }, []);
-
-  const reports = useMemo(() => {
-    const mapped = rawReports.map(mapReport);
+  const orders = useMemo(() => {
+    let mapped = rawOrders.map(mapOrder);
 
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return mapped;
+    if (q) {
+      mapped = mapped.filter(
+        (o) =>
+          o.buyerName.toLowerCase().includes(q) ||
+          o.sellerName.toLowerCase().includes(q) ||
+          o.itemName.toLowerCase().includes(q) ||
+          o.rawOrderId.toLowerCase().includes(q) ||
+          o.displayOrderId.toLowerCase().includes(q)
+      );
+    }
 
-    return mapped.filter(
-      (r) =>
-        r.reporterName.toLowerCase().includes(q) ||
-        r.listingName.toLowerCase().includes(q) ||
-        r.type.toLowerCase().includes(q) ||
-        r.reason.toLowerCase().includes(q) ||
-        r.id.toLowerCase().includes(q)
-    );
-  }, [rawReports, searchQuery]);
+    mapped = [...mapped].sort((a, b) => {
+      const aTime = new Date(a.createdAt).getTime();
+      const bTime = new Date(b.createdAt).getTime();
+      return sortBy === "Newest" ? bTime - aTime : aTime - bTime;
+    });
+
+    return mapped;
+  }, [rawOrders, searchQuery, sortBy]);
+
+  const formatPrice = useCallback((price: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(price / 100);
+  }, []);
 
   return {
     state: {
-      reports,
+      orders,
       isLoading,
       error,
       searchQuery,
-      statusFilter,
+      sortBy,
       isUpdating,
-      selectedReport,
-      isLoadingDetail,
-      detailError,
     },
-    setters: { setSearchQuery, setStatusFilter },
-    handlers: { updateReportStatus, viewReport, closeReport, refetch: fetchReports },
+    setters: { setSearchQuery, setSortBy },
+    handlers: { updateOrderStatus, refetch: fetchOrders },
+    helpers: { formatPrice },
   };
 }
