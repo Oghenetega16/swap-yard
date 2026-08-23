@@ -179,7 +179,7 @@ export default function AdminOrders() {
                             <th className="px-4 py-4 font-medium whitespace-nowrap">Seller</th>
                             <th className="px-4 py-4 font-medium min-w-50">Item</th>
                             <th className="px-4 py-4 font-medium whitespace-nowrap">Condition</th>
-                            <th className="px-4 py-4 font-medium whitespace-nowrap">Price</th>
+                            <th className="px-4 py-4 font-medium whitespace-nowrap">Price (NGN)</th>
                             <th className="px-4 py-4 font-medium whitespace-nowrap">Status</th>
                             <th className="px-4 py-4 rounded-tr-lg font-medium whitespace-nowrap text-right">Action</th>
                         </tr>

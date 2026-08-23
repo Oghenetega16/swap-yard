@@ -12,7 +12,6 @@ import Logo from "@/components/ui/Logo";
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutGrid },
   { name: "Users", href: "/admin/users", icon: Users },
-  { name: "Listings", href: "/admin/listings", icon: ShoppingBag },
   { name: "Orders", href: "/admin/orders", icon: ShoppingBag },
   { name: "Reports & Complaints", href: "/admin/reports", icon: ShieldAlert },
   { name: "Transactions", href: "/admin/transactions", icon: ArrowLeftRight },
