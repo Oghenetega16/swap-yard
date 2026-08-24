@@ -49,8 +49,10 @@ export const SellerNavbar = ({ onOpenSidebar }: SellerNavbarProps) => {
     };
 
     const navLinks = [
-        { name: "Dashboard", href: "/seller/overview" },
+        { name: "Orders", href: "/seller/orders" },
         { name: "My Store", href: "/seller/store" },
+        { name: "Post Listings", href: "/seller/post-listing" },
+        { name: "My Profile", href: "/seller/account" },
     ];
 
     return (

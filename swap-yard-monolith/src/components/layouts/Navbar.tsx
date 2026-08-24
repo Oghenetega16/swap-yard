@@ -124,6 +124,8 @@ export const Navbar = ({ onOpenSidebar }: NavbarProps) => {
 
     const isAuth = user !== null;
     const isBuyer = isAuth && user?.role === "BUYER";
+    const isSeller = isAuth && user?.role === "SELLER";
+    const isAdmin = isAuth && user?.role === "ADMIN";
 
     const hiddenRoutes = ["/auth/login", "/auth/signup", "/auth/verify", "/seller/verify"];
     const shouldHideNavbar = hiddenRoutes.some(route => pathname?.startsWith(route));
@@ -162,9 +164,16 @@ export const Navbar = ({ onOpenSidebar }: NavbarProps) => {
                    { isBuyer && (
                             <Link href="/orders" className="hover:text-[#EB3B18] transition-colors cursor-pointer">Orders</Link>
                         )}
+                        { isSeller && (
+                            <Link href="/seller/account" className="hover:text-[#EB3B18] transition-colors cursor-pointer">My Seller Account</Link>
+                        )}
+                        { isAdmin && (
+                            <Link href="/admin" className="hover:text-[#EB3B18] transition-colors cursor-pointer">Admin Dashboard</Link>
+                        )}
+                        
                         { isBuyer && (
                             <Link href="/wishlist" className="hover:text-[#EB3B18] transition-colors cursor-pointer">Wishlist</Link>
-                        )}                                         
+                    )}                                         
                     
                 </div>
 

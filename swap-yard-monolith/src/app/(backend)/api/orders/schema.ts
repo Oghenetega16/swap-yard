@@ -17,7 +17,7 @@ export const getOrdersSchema = z
         "DISPUTED",
       ])
       .optional(),
-    scope: z.enum(["buyer", "seller"]).default("buyer"),
+    scope: z.enum(["buyer", "seller", "admin"]).default("buyer"),
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(50).default(10),
   })

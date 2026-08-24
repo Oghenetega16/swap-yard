@@ -26,9 +26,16 @@ async function getUser(req: Request) {
 
   if (!userId) return null;
 
-  return prisma.user.findUnique({
-    where: { id: userId, role: "BUYER" },
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
   });
+
+  if (!user) return null;
+
+  // Cart access is no longer BUYER-only — admins can use it too.
+  if (user.role !== "BUYER" && user.role !== "ADMIN") return null;
+
+  return user;
 }
 
 

@@ -4,12 +4,25 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Upload, Loader2, CheckCircle2, AlertCircle, ShieldCheck, RefreshCw, MapPin, X } from 'lucide-react';
 import { Footer } from '@/components/landing/Footer';
 
+const REASON_MAX = 500;
+const COMMENT_MAX = 1000;
+
+type FormErrors = {
+  listingId?: string;
+  type?: string;
+  reason?: string;
+  comment?: string;
+};
+
 export default function MakeReport() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const [idempotencyKey, setIdempotencyKey] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [reasonLength, setReasonLength] = useState(0);
+  const [commentLength, setCommentLength] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -40,18 +53,63 @@ export default function MakeReport() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+
+  const validate = (payload: { listingId: string; type: string; reason: string; comment: string }): FormErrors => {
+    const next: FormErrors = {};
+
+    if (!payload.listingId.trim()) {
+      next.listingId = "Listing ID is required";
+    }
+
+    if (!payload.type.trim()) {
+      next.type = "Report type is required";
+    }
+
+    if (!payload.reason.trim()) {
+      next.reason = "Reason is required";
+    } else if (payload.reason.length > REASON_MAX) {
+      next.reason = `Reason must be ${REASON_MAX} characters or fewer`;
+    }
+
+    if (payload.comment.length > COMMENT_MAX) {
+      next.comment = `Comment must be ${COMMENT_MAX} characters or fewer`;
+    }
+
+    return next;
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
     setStatus(null);
 
     const form = e.currentTarget;
-    const formData = new FormData();
 
-    formData.append('listingId', (form.elements.namedItem('orderId') as HTMLInputElement).value);
-    formData.append('type', (form.elements.namedItem('issueType') as HTMLInputElement).value);
-    formData.append('reason', (form.elements.namedItem('description') as HTMLTextAreaElement).value);
-    formData.append('comment', (form.elements.namedItem('additionalDetails') as HTMLTextAreaElement)?.value ?? '');
+    const listingId = (form.elements.namedItem('orderId') as HTMLInputElement).value;
+    const type = (form.elements.namedItem('issueType') as RadioNodeList | HTMLInputElement)?.value ?? '';
+    const reason = (form.elements.namedItem('description') as HTMLTextAreaElement).value;
+    const rawComment = (form.elements.namedItem('additionalDetails') as HTMLTextAreaElement)?.value ?? '';
+    // comment is optional/nullable server-side: send null instead of an empty string
+    const comment = rawComment.trim().length > 0 ? rawComment : '';
+
+    const validationErrors = validate({ listingId, type, reason, comment });
+    setErrors(validationErrors);
+
+    if (Object.keys(validationErrors).length > 0) {
+      setStatus({ type: 'error', msg: 'Please fix the highlighted fields and try again.' });
+      return;
+    }
+
+    setLoading(true);
+
+    const formData = new FormData();
+    formData.append('listingId', listingId);
+    formData.append('type', type);
+    formData.append('reason', reason);
+    if (comment.trim().length > 0) {
+      formData.append('comment', comment);
+    } else {
+      formData.append('comment', '');
+    }
 
     selectedFiles.forEach(file => formData.append('images', file));
 
@@ -72,6 +130,15 @@ export default function MakeReport() {
         setIdempotencyKey(window.crypto.randomUUID());
         setSelectedFiles([]);
         setPreviews([]);
+        setErrors({});
+        setReasonLength(0);
+        setCommentLength(0);
+      } else if (response.status === 400) {
+        const body = await response.json().catch(() => null);
+        if (body?.errors) {
+          setErrors(body.errors);
+        }
+        throw new Error();
       } else {
         throw new Error();
       }
@@ -93,7 +160,7 @@ export default function MakeReport() {
           Please select the type of issue and provide detailed information. Our team will review and address your concerns
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} noValidate className="space-y-8">
           <div className="space-y-4">
             <p className="text-sm font-semibold text-slate-700">Select the type of issue you are reporting:</p>
             <div className="flex gap-8">
@@ -106,16 +173,28 @@ export default function MakeReport() {
                 <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Other</span>
               </label>
             </div>
+            {errors.type && <p className="text-xs font-medium text-red-600">{errors.type}</p>}
           </div>
+
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Describe the issue in detail:</label>
-            <textarea 
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-semibold text-slate-700">Describe the issue in detail:</label>
+              <span className={`text-xs ${reasonLength > REASON_MAX ? 'text-red-600' : 'text-slate-400'}`}>
+                {reasonLength}/{REASON_MAX}
+              </span>
+            </div>
+            <textarea
               name="description"
               required
               rows={6}
-              className="w-full p-4 rounded-lg border border-slate-200 focus:ring-2 focus:ring-slate-400 outline-none text-sm transition-all"
+              maxLength={REASON_MAX}
+              onChange={(e) => setReasonLength(e.target.value.length)}
+              className={`w-full p-4 rounded-lg border outline-none text-sm transition-all focus:ring-2 ${
+                errors.reason ? 'border-red-300 focus:ring-red-300' : 'border-slate-200 focus:ring-slate-400'
+              }`}
               placeholder="Include any relevant information such as order ID, product issues and specific concerns."
             />
+            {errors.reason && <p className="text-xs font-medium text-red-600">{errors.reason}</p>}
           </div>
 
           <div className="space-y-2">
@@ -172,11 +251,34 @@ export default function MakeReport() {
             </div>
             <div className="space-y-2 md:col-span-2">
               <label className="text-sm font-semibold text-slate-700">Order ID *</label>
-              <input name="orderId" required className="w-full p-3.5 bg-white border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-slate-400 text-sm" placeholder="40549640" />
+              <input
+                name="orderId"
+                required
+                className={`w-full p-3.5 bg-white border rounded-lg outline-none text-sm focus:ring-2 ${
+                  errors.listingId ? 'border-red-300 focus:ring-red-300' : 'border-slate-200 focus:ring-slate-400'
+                }`}
+                placeholder="40549640"
+              />
+              {errors.listingId && <p className="text-xs font-medium text-red-600">{errors.listingId}</p>}
             </div>
             <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-semibold text-slate-700">Any Additional details you would like to share?</label>
-              <textarea name="additionalDetails" rows={4} className="w-full p-4 bg-white border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-slate-400 text-sm resize-none" placeholder="Type here..." />
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-slate-700">Any Additional details you would like to share?</label>
+                <span className={`text-xs ${commentLength > COMMENT_MAX ? 'text-red-600' : 'text-slate-400'}`}>
+                  {commentLength}/{COMMENT_MAX}
+                </span>
+              </div>
+              <textarea
+                name="additionalDetails"
+                rows={4}
+                maxLength={COMMENT_MAX}
+                onChange={(e) => setCommentLength(e.target.value.length)}
+                className={`w-full p-4 bg-white border rounded-lg outline-none text-sm resize-none focus:ring-2 ${
+                  errors.comment ? 'border-red-300 focus:ring-red-300' : 'border-slate-200 focus:ring-slate-400'
+                }`}
+                placeholder="Type here..."
+              />
+              {errors.comment && <p className="text-xs font-medium text-red-600">{errors.comment}</p>}
             </div>
           </div>
 
