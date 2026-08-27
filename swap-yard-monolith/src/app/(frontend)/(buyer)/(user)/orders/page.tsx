@@ -209,9 +209,6 @@ function CancelModal({ order, onClose, onCancelled }: CancelModalProps) {
     );
 }
 
-// -----------------------------------------------------------------
-// Progress step
-// -----------------------------------------------------------------
 type StepState = "inactive" | "done" | "active";
 
 interface ProgressStepProps {
