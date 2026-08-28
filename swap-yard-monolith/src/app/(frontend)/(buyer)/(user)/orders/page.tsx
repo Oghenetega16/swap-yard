@@ -319,54 +319,31 @@ function OrderCard({
     const [payError, setPayError] = useState<string | null>(null);
 
     const handlePay = async () => {
-        setIsPaying(true);
-        setPayError(null);
+    setIsPaying(true);
+    setPayError(null);dd 
 
-        try {
-            const res = await fetch("/api/payments/initiate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ orderId: order.id }),
-            });
-            const data = await res.json();
+    try {
+        const res = await fetch("/api/payments/initiate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId: order.id }),
+        });
+        const data = await res.json();
 
-            if (!data.ok || !data.authorizationUrl) {
-                throw new Error(data.message || "Could not start payment.");
-            }
-
-            try {
-                await loadPaystackScript();
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const PaystackPop = (window as any).PaystackPop;
-                if (!PaystackPop) throw new Error("PaystackPop not available");
-
-                const handler = PaystackPop.setup({
-                    key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
-                    email: data.email,           // your /api/payments/initiate should return the buyer email
-                    amount: data.amountInKobo,   // and the amount in kobo
-                    ref: data.reference,
-                    currency: "NGN",
-                    onSuccess: () => {
-                        onStatusUpdate(order.id, "PAID");
-                        setIsPaying(false);
-                    },
-                    onCancel: () => {
-                        setIsPaying(false);
-                        setPayError("Payment cancelled. You can try again anytime.");
-                    },
-                });
-
-                handler.openIframe();
-                // isPaying stays true until callback fires
-            } catch {
-                // Inline script failed — redirect fallback
-                window.location.href = data.authorizationUrl;
-            }
-        } catch (err: unknown) {
-            setIsPaying(false);
-            setPayError(err instanceof Error ? err.message : "Something went wrong.");
+        if (!data.ok || !data.authorizationUrl) {
+            throw new Error(data.message || "Could not start payment.");
         }
-    };
+
+        // Reference was already initialized server-side in /api/payments/initiate.
+        // Redirect to Paystack's hosted checkout instead of also opening the
+        // inline widget — initializing the same reference twice (once via the
+        // REST API, once via PaystackPop.setup) is what caused the 400.
+        window.location.href = data.authorizationUrl;
+    } catch (err: unknown) {
+        setIsPaying(false);
+        setPayError(err instanceof Error ? err.message : "Something went wrong."); 
+    }
+};
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-shadow hover:shadow-md">
