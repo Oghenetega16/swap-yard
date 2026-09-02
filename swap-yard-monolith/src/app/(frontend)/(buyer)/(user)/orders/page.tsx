@@ -320,7 +320,7 @@ function OrderCard({
 
     const handlePay = async () => {
     setIsPaying(true);
-    setPayError(null);dd 
+    setPayError(null); 
 
     try {
         const res = await fetch("/api/payments/initiate", {
