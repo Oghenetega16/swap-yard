@@ -41,7 +41,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    // --- Idempotency check (outside transaction) ---
     const existingEntry = await prisma.idempotencyKey.findUnique({
       where: { key: idempotencyKey },
     });
@@ -120,7 +119,6 @@ export async function POST(req: Request) {
     const totalAmount = subtotal + deliveryFee;
     const listingIds = orderItemsData.map((i) => i.listingId);
 
-    // --- Transaction: only the 3 writes that must be atomic ---
     const newOrder = await prisma.$transaction(
       async (tx) => {
         const created = await tx.order.create({
@@ -178,15 +176,23 @@ export async function POST(req: Request) {
 
     const paystackData = await paystackRes.json();
 
+    if (!paystackData.status) {
+  return NextResponse.json(
+    { 
+      message: "Order created, but payment initialization failed.", 
+      order: newOrder,
+      error: paystackData.message 
+    },
+    { status: 207 }
+  );
+}
+
     const finalResponse = {
       message: "Order created",
       order: newOrder,
-      ...(paystackData.status && {
-        paymentUrl: paystackData.data.authorization_url,
-      }),
+      paymentUrl: paystackData.data.authorization_url,
     };
 
-    // Mark idempotency key as COMPLETED (outside transaction)
     await prisma.idempotencyKey.update({
       where: { key: idempotencyKey },
       data: { status: "COMPLETED", response: finalResponse as any },
