@@ -88,18 +88,6 @@ const formatPrice = (price: number) =>
     new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 0 }).format(price);
 
 
-function loadPaystackScript(): Promise<void> {
-    return new Promise((resolve, reject) => {
-        if (document.getElementById("paystack-inline-js")) { resolve(); return; }
-        const script = document.createElement("script");
-        script.id = "paystack-inline-js";
-        script.src = "https://js.paystack.co/v1/inline.js";
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error("Failed to load Paystack script"));
-        document.body.appendChild(script);
-    });
-}
-
 interface CancelModalProps {
     order: Order;
     onClose: () => void;
@@ -347,7 +335,6 @@ function OrderCard({
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-shadow hover:shadow-md">
-            {/* Card header */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 bg-gray-50/60">
                 <span className="text-xs font-mono font-medium text-gray-500">
                     #{order.id.slice(-8).toUpperCase()}
@@ -368,7 +355,6 @@ function OrderCard({
             </div>
 
             <div className="p-5 flex flex-col gap-5">
-                {/* Items */}
                 <div className="flex flex-col gap-3">
                     {order.items.map((item, i) => (
                         <div key={i} className="flex items-center gap-3">

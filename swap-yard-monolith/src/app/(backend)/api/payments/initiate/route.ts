@@ -74,6 +74,14 @@ export async function POST(req: Request) {
     // reference format.
     const reference = `${order.payment.id}-${Date.now()}`;
 
+    // Record the reference we're about to use — providerRef is @unique on
+    // Payment, so each new attempt overwrites the last, which is fine since
+    // we only ever care about the most recent in-flight attempt.
+    await prisma.payment.update({
+      where: { id: order.payment.id },
+      data: { providerRef: reference },
+    });
+
     const paystackRes = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
       headers: {
