@@ -13,7 +13,7 @@ export default function PaymentSuccessPage() {
     const [state, setState] = useState<VerifyState>("checking");
     const [message, setMessage] = useState<string | null>(null);
 
-    // Paystack appends both `reference` and `trxref` — they're the same value.
+    // Paystack appends both `reference` and `trxref` as they're the same value.
     const reference = searchParams.get("reference") ?? searchParams.get("trxref");
 
     useEffect(() => {
