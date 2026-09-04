@@ -18,7 +18,7 @@ async function getCookie(req: Request, name: string) {
   );
 }
 
-async function getAuthenticatedAdmin(req: Request) {
+async function getAuthenticatedUser(req: Request) {
   const token = await getCookie(req, "session");
 
   if (!token) {
@@ -52,25 +52,22 @@ async function getAuthenticatedAdmin(req: Request) {
       error: NextResponse.json({ message: "User does not exist" }, { status: 404 }),
     };
   }
-  
-  if (user.role !== "ADMIN") {
-    return {
-      error: NextResponse.json({ message: "Forbidden" }, { status: 403 }),
-    };
-  }
 
   return { user };
 }
 
 export async function GET(req: Request) {
   try {
-    const auth = await getAuthenticatedAdmin(req);
+    const auth = await getAuthenticatedUser(req);
     if ("error" in auth) return auth.error;
+
+    const { user } = auth;
 
     const { searchParams } = new URL(req.url);
 
     const rawQuery = {
       status: searchParams.get("status") ?? undefined,
+      scope: searchParams.get("scope") ?? undefined,
       page: searchParams.get("page") ?? undefined,
       limit: searchParams.get("limit") ?? undefined,
     };
@@ -87,12 +84,30 @@ export async function GET(req: Request) {
       );
     }
 
-    const { status, page, limit } = validatedQuery.data;
+    const { status, scope, page, limit } = validatedQuery.data;
+
+    // scope=admin is the only branch that requires the ADMIN role —
+    // buyer/seller scopes are just "show me my own orders" and are open
+    // to any authenticated user.
+    if (scope === "admin" && user.role !== "ADMIN") {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
     const skip = (page - 1) * limit;
 
-    // No buyerId / sellerId filter here on purpose — admin sees every order.
     const where: Prisma.OrderWhereInput = {
       ...(status ? { status } : {}),
+      ...(scope === "buyer"
+        ? { buyerId: user.id }
+        : scope === "seller"
+        ? {
+            items: {
+              some: {
+                sellerId: user.id,
+              },
+            },
+          }
+        : {}), // scope === "admin" — no owner filter, sees every order
     };
 
     const [orders, total] = await Promise.all([
@@ -154,12 +169,13 @@ export async function GET(req: Request) {
           page,
           limit,
           pages: Math.ceil(total / limit),
+          scope,
         },
       },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error fetching admin orders:", error);
+    console.error("Error fetching orders:", error);
     return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }

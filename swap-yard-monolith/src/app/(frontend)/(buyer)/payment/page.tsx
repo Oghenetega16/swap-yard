@@ -66,9 +66,6 @@ export default function PaymentPage() {
         );
     }
 
-    // ==========================================
-    // INPUT FORMATTING HANDLERS
-    // ==========================================
     
     const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         // Remove all non-digits, limit to 16 digits
@@ -94,7 +91,6 @@ export default function PaymentPage() {
         setCardData({ ...cardData, cvc: value });
     };
 
-    // ==========================================
 
     // --- Handle Proceed to Review ---
     const handleNextStep = (e: React.MouseEvent) => {

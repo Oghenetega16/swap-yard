@@ -63,7 +63,7 @@ export async function GET(
 
     const [listings, total] = await Promise.all([
       prisma.listing.findMany({
-        where: { id: id },
+        where: { sellerId: id },
         select: {
           id: true,
           name: true,
@@ -76,7 +76,7 @@ export async function GET(
         skip,
         take: limit,
       }),
-      prisma.listing.count({ where: { id: id } }),
+      prisma.listing.count({ where: { sellerId: id } }),
     ]);
 
     return NextResponse.json(

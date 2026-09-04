@@ -88,18 +88,6 @@ const formatPrice = (price: number) =>
     new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 0 }).format(price);
 
 
-function loadPaystackScript(): Promise<void> {
-    return new Promise((resolve, reject) => {
-        if (document.getElementById("paystack-inline-js")) { resolve(); return; }
-        const script = document.createElement("script");
-        script.id = "paystack-inline-js";
-        script.src = "https://js.paystack.co/v1/inline.js";
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error("Failed to load Paystack script"));
-        document.body.appendChild(script);
-    });
-}
-
 interface CancelModalProps {
     order: Order;
     onClose: () => void;
@@ -209,9 +197,6 @@ function CancelModal({ order, onClose, onCancelled }: CancelModalProps) {
     );
 }
 
-// -----------------------------------------------------------------
-// Progress step
-// -----------------------------------------------------------------
 type StepState = "inactive" | "done" | "active";
 
 interface ProgressStepProps {
@@ -322,58 +307,34 @@ function OrderCard({
     const [payError, setPayError] = useState<string | null>(null);
 
     const handlePay = async () => {
-        setIsPaying(true);
-        setPayError(null);
+    setIsPaying(true);
+    setPayError(null); 
 
-        try {
-            const res = await fetch("/api/payments/initiate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ orderId: order.id }),
-            });
-            const data = await res.json();
+    try {
+        const res = await fetch("/api/payments/initiate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId: order.id }),
+        });
+        const data = await res.json();
 
-            if (!data.ok || !data.authorizationUrl) {
-                throw new Error(data.message || "Could not start payment.");
-            }
-
-            try {
-                await loadPaystackScript();
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const PaystackPop = (window as any).PaystackPop;
-                if (!PaystackPop) throw new Error("PaystackPop not available");
-
-                const handler = PaystackPop.setup({
-                    key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
-                    email: data.email,           // your /api/payments/initiate should return the buyer email
-                    amount: data.amountInKobo,   // and the amount in kobo
-                    ref: data.reference,
-                    currency: "NGN",
-                    onSuccess: () => {
-                        onStatusUpdate(order.id, "PAID");
-                        setIsPaying(false);
-                    },
-                    onCancel: () => {
-                        setIsPaying(false);
-                        setPayError("Payment cancelled. You can try again anytime.");
-                    },
-                });
-
-                handler.openIframe();
-                // isPaying stays true until callback fires
-            } catch {
-                // Inline script failed — redirect fallback
-                window.location.href = data.authorizationUrl;
-            }
-        } catch (err: unknown) {
-            setIsPaying(false);
-            setPayError(err instanceof Error ? err.message : "Something went wrong.");
+        if (!data.ok || !data.authorizationUrl) {
+            throw new Error(data.message || "Could not start payment.");
         }
-    };
+
+        // Reference was already initialized server-side in /api/payments/initiate.
+        // Redirect to Paystack's hosted checkout instead of also opening the
+        // inline widget — initializing the same reference twice (once via the
+        // REST API, once via PaystackPop.setup) is what caused the 400.
+        window.location.href = data.authorizationUrl;
+    } catch (err: unknown) {
+        setIsPaying(false);
+        setPayError(err instanceof Error ? err.message : "Something went wrong."); 
+    }
+};
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-shadow hover:shadow-md">
-            {/* Card header */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 bg-gray-50/60">
                 <span className="text-xs font-mono font-medium text-gray-500">
                     #{order.id.slice(-8).toUpperCase()}
@@ -394,7 +355,6 @@ function OrderCard({
             </div>
 
             <div className="p-5 flex flex-col gap-5">
-                {/* Items */}
                 <div className="flex flex-col gap-3">
                     {order.items.map((item, i) => (
                         <div key={i} className="flex items-center gap-3">

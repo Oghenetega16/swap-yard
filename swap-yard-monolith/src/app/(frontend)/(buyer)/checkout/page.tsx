@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useCart } from "@/app/context/CartContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, Loader2, ArrowLeft, AlertCircle } from "lucide-react";
+import { Check, Loader2, ArrowLeft, AlertCircle, Truck } from "lucide-react";
 import ValuePropsSection from "@/components/buyer/listings/ValuePropsSection";
 import { useCountriesAndStates } from "@/hooks/buyer/useCountriesAndStates";
 
@@ -59,6 +59,7 @@ export default function CheckoutPage() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [paystackWarning, setPaystackWarning] = useState<string | null>(null);
+    const [deliveryEnabled, setDeliveryEnabled] = useState(true);
 
     const { countries, states, selectedCountry, setSelectedCountry, selectedState, setSelectedState, loading } =
         useCountriesAndStates("Nigeria");
@@ -66,7 +67,8 @@ export default function CheckoutPage() {
     const formatPrice = (price: number) =>
         new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 2 }).format(price);
 
-    const finalTotal = cartTotal + DELIVERY_METHOD.price;
+    const deliveryPrice = deliveryEnabled ? DELIVERY_METHOD.price : 0;
+    const finalTotal = cartTotal + deliveryPrice;
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -103,9 +105,9 @@ export default function CheckoutPage() {
             ...formData,
             country: selectedCountry,
             state: selectedState,
-            deliveryMethod: DELIVERY_METHOD,
+            deliveryMethod: deliveryEnabled ? DELIVERY_METHOD : null,
             cartTotal,
-            deliveryPrice: DELIVERY_METHOD.price,
+            deliveryPrice,
             finalTotal,
         };
         sessionStorage.setItem("swapyard_checkout", JSON.stringify(checkoutData));
@@ -114,7 +116,7 @@ export default function CheckoutPage() {
         const paystackResult = await initiatePaystackPayment(formData.email, finalTotal, {
             name: `${formData.firstName} ${formData.lastName}`,
             phone: formData.phone,
-            deliveryMethod: DELIVERY_METHOD.name,
+            deliveryMethod: deliveryEnabled ? DELIVERY_METHOD.name : "None",
             cartCount,
         });
 
@@ -261,20 +263,40 @@ export default function CheckoutPage() {
                         </label>
                     </div>
 
-                    {/* Delivery Method */}
+                    {/* Delivery Method — now optional */}
                     <div className="mb-10">
-                        <h2 className="text-base font-bold text-gray-900 mb-6">Delivery method</h2>
-                        <div className="flex-1 p-5 border border-[#EB3B18] border-[1.5px] flex flex-col relative max-w-xs">
-                            <div className="absolute top-4 right-4 w-3.5 h-3.5 rounded-full border border-[#EB3B18] flex items-center justify-center">
-                                <div className="w-1.5 h-1.5 bg-[#EB3B18] rounded-full" />
+                        <h2 className="text-base font-bold text-gray-900 mb-2">Delivery method</h2>
+                        <p className="text-xs text-gray-500 mb-6">Optional — skip this if you're arranging pickup yourself.</p>
+
+                        <button
+                            type="button"
+                            onClick={() => setDeliveryEnabled((prev) => !prev)}
+                            aria-pressed={deliveryEnabled}
+                            className={`w-full max-w-xs text-left p-5 border flex flex-col relative transition-colors cursor-pointer ${
+                                deliveryEnabled ? "border-[#EB3B18] border-[1.5px]" : "border-gray-200 hover:border-gray-300"
+                            }`}
+                        >
+                            <div
+                                className={`absolute top-4 right-4 w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                                    deliveryEnabled ? "border-[#EB3B18]" : "border-gray-300"
+                                }`}
+                            >
+                                {deliveryEnabled && <div className="w-1.5 h-1.5 bg-[#EB3B18] rounded-full" />}
                             </div>
-                            <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-1">{DELIVERY_METHOD.name}</div>
-                            <div className="text-[13px] font-bold text-gray-900 mb-6">{formatPrice(DELIVERY_METHOD.price)}</div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <Truck size={13} className={deliveryEnabled ? "text-[#EB3B18]" : "text-gray-400"} />
+                                <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">{DELIVERY_METHOD.name}</div>
+                            </div>
+                            <div className={`text-[13px] font-bold mb-6 ${deliveryEnabled ? "text-gray-900" : "text-gray-400"}`}>
+                                {formatPrice(DELIVERY_METHOD.price)}
+                            </div>
                             <div className="mt-auto">
-                                <div className="text-[8px] text-gray-400 uppercase tracking-widest mb-0.5">Package arrives:</div>
-                                <div className="text-xs font-bold text-gray-900">{DELIVERY_METHOD.arrival}</div>
+                                <div className="text-[8px] text-gray-400 uppercase tracking-widest mb-0.5">
+                                    {deliveryEnabled ? "Package arrives:" : "Not selected"}
+                                </div>
+                                {deliveryEnabled && <div className="text-xs font-bold text-gray-900">{DELIVERY_METHOD.arrival}</div>}
                             </div>
-                        </div>
+                        </button>
                     </div>
 
                     {/* Actions */}
@@ -339,8 +361,12 @@ export default function CheckoutPage() {
                                 <span className="text-sm font-bold text-gray-900">{formatPrice(cartTotal)}</span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-sm font-semibold text-gray-600">Delivery ({DELIVERY_METHOD.name})</span>
-                                <span className="text-sm font-bold text-gray-900">{formatPrice(DELIVERY_METHOD.price)}</span>
+                                <span className="text-sm font-semibold text-gray-600">
+                                    Delivery {deliveryEnabled ? `(${DELIVERY_METHOD.name})` : ""}
+                                </span>
+                                <span className={`text-sm font-bold ${deliveryEnabled ? "text-gray-900" : "text-gray-400"}`}>
+                                    {deliveryEnabled ? formatPrice(DELIVERY_METHOD.price) : "Not selected"}
+                                </span>
                             </div>
                         </div>
 
