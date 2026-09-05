@@ -17,7 +17,7 @@ async function getCookie(req: Request, name: string) {
   );
 }
 
-async function getAuthenticatedAdmin(req: Request) {
+async function getAuthenticatedUser(req: Request) {
   const token = await getCookie(req, "session");
   if (!token) return { error: NextResponse.json({ message: "Unauthorized" }, { status: 401 }) };
 
@@ -32,11 +32,6 @@ async function getAuthenticatedAdmin(req: Request) {
 
   if (!user) return { error: NextResponse.json({ message: "User does not exist" }, { status: 404 }) };
 
-  // Adjust "ADMIN" to whatever your Role enum actually calls the admin role.
-  if (user.role !== "ADMIN") {
-    return { error: NextResponse.json({ message: "Forbidden" }, { status: 403 }) };
-  }
-
   return { user };
 }
 
@@ -45,12 +40,12 @@ export async function GET(
   ctx: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = await getAuthenticatedAdmin(req);
+    const auth = await getAuthenticatedUser(req);
     if ("error" in auth) return auth.error;
+    const { user } = auth;
 
     const { id } = await ctx.params;
 
-    // No OR buyerId/sellerId filter — admin can open any order.
     const order = await prisma.order.findUnique({
       where: { id },
       include: {
@@ -64,7 +59,9 @@ export async function GET(
           },
         },
         payment: true,
-        payouts: true,
+        // Payouts carry seller financial details — only admin needs to see
+        // them here; buyers/sellers get the rest of the order regardless.
+        ...(user.role === "ADMIN" ? { payouts: true } : {}),
       },
     });
 
@@ -72,9 +69,16 @@ export async function GET(
       return NextResponse.json({ message: "Order not found" }, { status: 404 });
     }
 
+    const isBuyer = order.buyerId === user.id;
+    const isSeller = order.items.some((item) => item.sellerId === user.id);
+
+    if (user.role !== "ADMIN" && !isBuyer && !isSeller) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
     return NextResponse.json({ order }, { status: 200 });
   } catch (error) {
-    console.error("ADMIN GET ORDER ERROR:", error);
+    console.error("GET ORDER ERROR:", error);
     return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }
@@ -84,8 +88,9 @@ export async function PATCH(
   ctx: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = await getAuthenticatedAdmin(req);
+    const auth = await getAuthenticatedUser(req);
     if ("error" in auth) return auth.error;
+    const { user } = auth;
 
     const { id } = await ctx.params;
     const body = await req.json();
@@ -100,8 +105,18 @@ export async function PATCH(
 
     const newStatus = parsed.data.status;
 
-    const existingOrder = await prisma.order.findUnique({
-      where: { id },
+    const existingOrder = await prisma.order.findFirst({
+      where: {
+        id,
+        ...(user.role === "ADMIN"
+          ? {}
+          : {
+              OR: [
+                { buyerId: user.id },
+                { items: { some: { sellerId: user.id } } },
+              ],
+            }),
+      },
       include: { items: true },
     });
 
@@ -109,9 +124,49 @@ export async function PATCH(
       return NextResponse.json({ message: "Order not found" }, { status: 404 });
     }
 
-    // Admin is exempt from the isBuyer/isSeller + sequential-status checks
-    // that the regular PATCH route enforces — that's the whole point of the
-    // admin surface: full override capability.
+    const isBuyer = existingOrder.buyerId === user.id;
+    const isSeller = existingOrder.items.some((item) => item.sellerId === user.id);
+    const currentStatus = existingOrder.status;
+
+    if (user.role !== "ADMIN") {
+      if (newStatus === "DELIVERED" && !isSeller) {
+        return NextResponse.json(
+          { message: "Only seller can mark as delivered" },
+          { status: 403 }
+        );
+      }
+      if (newStatus === "COMPLETED" && !isBuyer) {
+        return NextResponse.json(
+          { message: "Only buyer can complete order" },
+          { status: 403 }
+        );
+      }
+      if (newStatus === "CANCELLED" && !isBuyer) {
+        return NextResponse.json(
+          { message: "Only buyer can cancel order" },
+          { status: 403 }
+        );
+      }
+      if (newStatus === "DELIVERED" && currentStatus !== "PAID") {
+        return NextResponse.json(
+          { message: "Order must be PAID before delivery" },
+          { status: 400 }
+        );
+      }
+      if (newStatus === "COMPLETED" && currentStatus !== "DELIVERED") {
+        return NextResponse.json(
+          { message: "Order must be DELIVERED before completion" },
+          { status: 400 }
+        );
+      }
+      if (newStatus === "CANCELLED" && currentStatus !== "PENDING_PAYMENT") {
+        return NextResponse.json(
+          { message: "Cannot cancel after payment" },
+          { status: 400 }
+        );
+      }
+    }
+
     const updateData: any = { status: newStatus };
 
     if (newStatus === "DELIVERED") updateData.deliveredAt = new Date();
@@ -155,7 +210,7 @@ export async function PATCH(
       { status: 200 }
     );
   } catch (error) {
-    console.error("ADMIN PATCH ORDER ERROR:", error);
+    console.error("PATCH ORDER ERROR:", error);
     return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }
