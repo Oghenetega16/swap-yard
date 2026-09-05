@@ -128,7 +128,21 @@ export async function PATCH(
     const isSeller = existingOrder.items.some((item) => item.sellerId === user.id);
     const currentStatus = existingOrder.status;
 
+    // Admin is exempt from every check below — that's the whole point of
+    // the admin override. Everyone else follows the normal business rules.
     if (user.role !== "ADMIN") {
+      if (newStatus === "SHIPPED" && !isSeller) {
+        return NextResponse.json(
+          { message: "Only seller can mark as shipped" },
+          { status: 403 }
+        );
+      }
+      if (newStatus === "SHIPPED" && currentStatus !== "PAID") {
+        return NextResponse.json(
+          { message: "Order must be paid before it can be shipped" },
+          { status: 400 }
+        );
+      }
       if (newStatus === "DELIVERED" && !isSeller) {
         return NextResponse.json(
           { message: "Only seller can mark as delivered" },
@@ -147,9 +161,9 @@ export async function PATCH(
           { status: 403 }
         );
       }
-      if (newStatus === "DELIVERED" && currentStatus !== "PAID") {
+      if (newStatus === "DELIVERED" && currentStatus !== "SHIPPED") {
         return NextResponse.json(
-          { message: "Order must be PAID before delivery" },
+          { message: "Order must be shipped before it can be marked delivered" },
           { status: 400 }
         );
       }
